@@ -1,20 +1,18 @@
 // Этот файл: sw.js
-const CACHE_NAME = 'banner-calculator-cache-v5'; // Новая версия для обновления
+const CACHE_NAME = 'banner-calculator-cache-v5';
 const URLS_TO_CACHE = [
   './',
   './index.html',
   './app.js',
   './calculation.js',
-  './markdownExporter.js', // Добавляем новый файл в кеш
+  './markdownExporter.js',
   './prices.json',
   './manifest.json',
   './icons/pwa-192x192.png',
   './icons/pwa-512x512.png',
   'https://unpkg.com/vue@3/dist/vue.global.js'
-  // Ссылка на jsPDF удалена
 ];
 
-// Код обработчиков 'install', 'fetch', 'activate' остается без изменений
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
