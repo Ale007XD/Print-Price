@@ -20,18 +20,15 @@ createApp({
     // --- ЛОГИКА ---
     onMounted(async () => {
       try {
-        const response = await fetch('./prices.json'); // Используем относительный путь
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await fetch('./prices.json');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         prices.value = await response.json();
-        
         if (prices.value?.materials.length > 0) {
           form.materialId = prices.value.materials[0].id;
         }
       } catch (error) {
         console.error("Не удалось загрузить файл с ценами:", error);
-        alert("Критическая ошибка: не удалось загрузить прайс-лист. Пожалуйста, проверьте консоль (F12) и убедитесь, что файл prices.json существует в репозитории.");
+        alert("Критическая ошибка: не удалось загрузить прайс-лист.");
       }
     });
 
@@ -40,11 +37,25 @@ createApp({
       
       return orderItems.value.map(item => {
         const result = calculateTotalCost(item, prices.value);
+
+        // --- Формируем строку с опциями ---
+        const options = [];
+        if (item.grommetOption === 'corners') {
+            options.push(`Люверсы - ${prices.value.grommets.corners.name}`);
+        } else if (item.grommetOption === 'perimeter') {
+             options.push(`Люверсы - ${prices.value.grommets.perimeter.name}`);
+        } else {
+             options.push('Люверсы - Без');
+        }
+        options.push(`Резка - ${item.needsCutting ? 'Да' : 'Нет'}`);
+        options.push(`Макет - ${item.layoutOption === 'create' ? 'Разработка' : 'Свой'}`);
+        
         const details = {
           ...item,
           materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
-          grommetName: item.grommetOption === 'none' ? 'Без люверсов' : (prices.value.grommets[item.grommetOption]?.name || '')
+          optionsString: options.join(', ') // Готовая строка для отображения
         };
+        
         return {
           id: item.id,
           details,
@@ -63,12 +74,7 @@ createApp({
         alert("Пожалуйста, введите корректные размеры и количество.");
         return;
       }
-      
-      const newItem = {
-        ...form,
-        id: Date.now()
-      };
-      orderItems.value.push(newItem);
+      orderItems.value.push({ ...form, id: Date.now() });
     };
 
     const removeItem = (id) => {
@@ -87,23 +93,16 @@ createApp({
     };
     
     return {
-      prices,
-      form,
-      orderItems,
-      calculatedItems,
-      grandTotal,
-      addItem,
-      removeItem,
-      formatCurrency,
-      exportToPDF,
+      prices, form, orderItems, calculatedItems, grandTotal,
+      addItem, removeItem, formatCurrency, exportToPDF,
     };
   }
 }).mount('#app');
 
-// Регистрация Service Worker (ИСПРАВЛЕННЫЙ ПУТЬ)
+// Регистрация Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js') // <-- ИЗМЕНЕНО: относительный путь
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('Service Worker зарегистрирован успешно.', reg))
       .catch(err => console.error('Ошибка регистрации Service Worker: ', err));
   });
