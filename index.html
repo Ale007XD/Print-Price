@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#42b883">
   
   <style>
+    /* ... Стили остаются без изменений ... */
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1em; background-color: #f4f4f4; }
     #app { max-width: 900px; margin: 0 auto; background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .loading-message { text-align: center; padding: 3rem; font-size: 1.2rem; color: #555; }
@@ -33,17 +34,18 @@
 <body>
 
   <div id="app">
+    <!-- Скрытый элемент для копирования в буфер обмена -->
+    <textarea id="markdown-output" style="position: absolute; left: -9999px;"></textarea>
+    
     <h1>Калькулятор баннеров</h1>
     <div v-if="!prices" class="loading-message">Загрузка данных...</div>
     
     <div v-else>
+      <!-- ... Форма остается без изменений ... -->
       <div class="form-container">
-        <!-- ... Форма остается без изменений ... -->
         <h2>Добавить новый баннер</h2>
         <label for="material">Материал:</label>
-        <select id="material" v-model="form.materialId">
-          <option v-for="mat in prices.materials" :key="mat.id" :value="mat.id">{{ mat.name }}</option>
-        </select>
+        <select id="material" v-model="form.materialId"><option v-for="mat in prices.materials" :key="mat.id" :value="mat.id">{{ mat.name }}</option></select>
         <label for="width">Ширина (м):</label>
         <input type="number" id="width" v-model.number="form.width" min="0.5" max="3" step="0.5">
         <label for="height">Высота (м):</label>
@@ -51,45 +53,40 @@
         <label for="quantity">Количество (шт):</label>
         <input type="number" id="quantity" v-model.number="form.quantity" min="1" step="1">
         <label for="grommets">Люверсы:</label>
-        <select id="grommets" v-model="form.grommetOption">
-          <option value="none">Без люверсов</option>
-          <option value="corners">4 по углам</option>
-          <option value="perimeter">По периметру</option>
-        </select>
+        <select id="grommets" v-model="form.grommetOption"><option value="none">Без люверсов</option><option value="corners">4 по углам</option><option value="perimeter">По периметру</option></select>
         <label><input type="checkbox" v-model="form.needsCutting"> Резка по периметру</label>
         <label for="layout">Макет:</label>
-        <select id="layout" v-model="form.layoutOption">
-          <option value="none">Свой макет</option>
-          <option value="create">Нужна разработка макета</option>
-        </select>
+        <select id="layout" v-model="form.layoutOption"><option value="none">Свой макет</option><option value="create">Нужна разработка макета</option></select>
         <button @click="addItem" class="add-button">Добавить баннер в расчёт</button>
       </div>
 
       <div class="order-list" v-if="calculatedItems.length > 0">
+        <!-- ... Отображение списка баннеров без изменений ... -->
         <h2>Список баннеров в заказе</h2>
         <div v-for="(item, index) in calculatedItems" :key="item.id" class="order-list-item">
-          <h3>Баннер #{{ index + 1 }}</h3>
-          <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
-          <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
-          <!-- ИЗМЕНЕНИЕ ЗДЕСЬ -->
-          <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
-          <hr>
-          <p><strong>Стоимость этой позиции: {{ formatCurrency(item.result.total) }}</strong></p>
-          <button @click="removeItem(item.id)" class="remove-btn">X</button>
+            <h3>Баннер #{{ index + 1 }}</h3>
+            <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
+            <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
+            <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
+            <hr>
+            <p><strong>Стоимость этой позиции: {{ formatCurrency(item.result.total) }}</strong></p>
+            <button @click="removeItem(item.id)" class="remove-btn">X</button>
         </div>
       </div>
       
       <div class="grand-total" v-if="calculatedItems.length > 0">
         <h3>Общая стоимость заказа: <span>{{ formatCurrency(grandTotal) }}</span></h3>
-        <button @click="exportToPDF" :disabled="grandTotal === 0">Экспорт в PDF</button>
+        <!-- ИЗМЕНЕНИЕ ЗДЕСЬ: Новая кнопка -->
+        <button @click="copyMarkdown" :disabled="grandTotal === 0" ref="copyButton">Копировать расчёт (Markdown)</button>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Библиотека jsPDF удалена -->
+  
   <script src="./calculation.js"></script>
-  <script src="./pdfExporter.js"></script>
+  <script src="./markdownExporter.js"></script> <!-- Подключаем новый скрипт -->
   <script src="./app.js"></script>
 </body>
 </html>
