@@ -1,24 +1,25 @@
 // Этот файл: sw.js
-const CACHE_NAME = 'banner-calculator-cache-v3'; // Увеличиваем версию кэша, чтобы обновиться
+const CACHE_NAME = 'banner-calculator-cache-v4'; // Новая версия для обновления
 const URLS_TO_CACHE = [
   './',
   './index.html',
   './app.js',
   './calculation.js',
-  './pdfExporter.js',
+  './markdownExporter.js', // Добавляем новый файл в кеш
   './prices.json',
   './manifest.json',
   './icons/pwa-192x192.png',
   './icons/pwa-512x512.png',
-  'https://unpkg.com/vue@3/dist/vue.global.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  'https://unpkg.com/vue@3/dist/vue.global.js'
+  // Ссылка на jsPDF удалена
 ];
 
+// Код обработчиков 'install', 'fetch', 'activate' остается без изменений
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Кэш открыт, добавляю файлы...');
+        console.log('Кэш открыт, добавляю файлы в кэш...');
         return cache.addAll(URLS_TO_CACHE);
       })
   );
