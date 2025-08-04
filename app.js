@@ -4,10 +4,9 @@ const { createApp, ref, reactive, computed, onMounted } = Vue;
 createApp({
   setup() {
     // --- ДАННЫЕ ---
-    const prices = ref(null); // Цены, загружаемые из JSON
-    const orderItems = ref([]); // Массив со всеми баннерами в заказе
+    const prices = ref(null);
+    const orderItems = ref([]);
     
-    // Форма для создания *нового* баннера
     const form = reactive({
       materialId: '',
       width: 1,
@@ -19,32 +18,32 @@ createApp({
     });
     
     // --- ЛОГИКА ---
-    // Загрузка цен при старте
     onMounted(async () => {
       try {
-        const response = await fetch('prices.json');
+        const response = await fetch('./prices.json'); // Используем относительный путь
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         prices.value = await response.json();
-        // Устанавливаем значение по умолчанию для формы
+        
         if (prices.value?.materials.length > 0) {
           form.materialId = prices.value.materials[0].id;
         }
       } catch (error) {
         console.error("Не удалось загрузить файл с ценами:", error);
-        alert("Ошибка загрузки цен. Функционал может быть ограничен.");
+        alert("Критическая ошибка: не удалось загрузить прайс-лист. Пожалуйста, проверьте консоль (F12) и убедитесь, что файл prices.json существует в репозитории.");
       }
     });
 
-    // Вычисляемое свойство, которое рассчитывает стоимость для каждого элемента в заказе
     const calculatedItems = computed(() => {
       if (!prices.value || orderItems.value.length === 0) return [];
       
       return orderItems.value.map(item => {
         const result = calculateTotalCost(item, prices.value);
-        // Добавляем текстовые описания для удобного отображения
         const details = {
           ...item,
           materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
-          grommetName: prices.value.grommets[item.grommetOption]?.name || 'Без люверсов'
+          grommetName: item.grommetOption === 'none' ? 'Без люверсов' : (prices.value.grommets[item.grommetOption]?.name || '')
         };
         return {
           id: item.id,
@@ -54,14 +53,12 @@ createApp({
       });
     });
 
-    // Вычисляемое свойство для общей суммы заказа
     const grandTotal = computed(() => {
       return calculatedItems.value.reduce((total, item) => total + item.result.total, 0);
     });
 
     // --- МЕТОДЫ ---
     const addItem = () => {
-      // Простая валидация
       if (form.width <= 0 || form.height <= 0 || form.quantity <= 0) {
         alert("Пожалуйста, введите корректные размеры и количество.");
         return;
@@ -69,7 +66,7 @@ createApp({
       
       const newItem = {
         ...form,
-        id: Date.now() // Уникальный ID для каждого элемента
+        id: Date.now()
       };
       orderItems.value.push(newItem);
     };
@@ -85,12 +82,10 @@ createApp({
 
     const exportToPDF = () => {
       if (grandTotal.value > 0) {
-        // Передаём рассчитанные элементы и общую сумму
         generatePdf(calculatedItems.value, grandTotal.value);
       }
     };
     
-    // Возвращаем все, что нужно в шаблоне
     return {
       prices,
       form,
@@ -105,11 +100,11 @@ createApp({
   }
 }).mount('#app');
 
-// Регистрация Service Worker (остается без изменений)
+// Регистрация Service Worker (ИСПРАВЛЕННЫЙ ПУТЬ)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/banner-calculator/sw.js')
-      .then(reg => console.log('SW registered.', reg))
-      .catch(err => console.error('SW registration failed: ', err));
+    navigator.serviceWorker.register('./sw.js') // <-- ИЗМЕНЕНО: относительный путь
+      .then(reg => console.log('Service Worker зарегистрирован успешно.', reg))
+      .catch(err => console.error('Ошибка регистрации Service Worker: ', err));
   });
 }
