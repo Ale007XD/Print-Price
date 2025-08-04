@@ -22,6 +22,7 @@
     .add-button { background-color: #3498db; }
     .add-button:hover { background-color: #2980b9; }
     .order-list-item { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; position: relative; }
+    .order-list-item p { margin: 0.5rem 0; }
     .order-list-item .remove-btn { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
     .order-list-item .remove-btn:hover { background: #c0392b; }
     .grand-total { margin-top: 2rem; text-align: right; border-top: 2px solid #333; padding-top: 1rem; }
@@ -33,16 +34,11 @@
 
   <div id="app">
     <h1>Калькулятор баннеров</h1>
+    <div v-if="!prices" class="loading-message">Загрузка данных...</div>
     
-    <!-- Сообщение о загрузке -->
-    <div v-if="!prices" class="loading-message">
-      Загрузка данных...
-    </div>
-    
-    <!-- Основное приложение, которое показывается ТОЛЬКО ПОСЛЕ загрузки цен -->
     <div v-else>
-      <!-- Форма для добавления нового баннера -->
       <div class="form-container">
+        <!-- ... Форма остается без изменений ... -->
         <h2>Добавить новый баннер</h2>
         <label for="material">Материал:</label>
         <select id="material" v-model="form.materialId">
@@ -69,21 +65,20 @@
         <button @click="addItem" class="add-button">Добавить баннер в расчёт</button>
       </div>
 
-      <!-- Список баннеров в заказе -->
       <div class="order-list" v-if="calculatedItems.length > 0">
         <h2>Список баннеров в заказе</h2>
         <div v-for="(item, index) in calculatedItems" :key="item.id" class="order-list-item">
           <h3>Баннер #{{ index + 1 }}</h3>
           <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
           <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
-          <p><strong>Опции:</strong> Люверсы - {{ item.details.grommetName }}, Резка - {{ item.details.needsCutting ? 'Да' : 'Нет' }}, Макет - {{ item.details.layoutOption === 'create' ? 'Разработка' : 'Свой' }}</p>
+          <!-- ИЗМЕНЕНИЕ ЗДЕСЬ -->
+          <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
           <hr>
           <p><strong>Стоимость этой позиции: {{ formatCurrency(item.result.total) }}</strong></p>
           <button @click="removeItem(item.id)" class="remove-btn">X</button>
         </div>
       </div>
       
-      <!-- Итоговая стоимость -->
       <div class="grand-total" v-if="calculatedItems.length > 0">
         <h3>Общая стоимость заказа: <span>{{ formatCurrency(grandTotal) }}</span></h3>
         <button @click="exportToPDF" :disabled="grandTotal === 0">Экспорт в PDF</button>
@@ -93,7 +88,6 @@
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  
   <script src="./calculation.js"></script>
   <script src="./pdfExporter.js"></script>
   <script src="./app.js"></script>
