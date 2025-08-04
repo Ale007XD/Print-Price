@@ -70,19 +70,26 @@ createApp({
 
     const formatCurrency = (value) => {
       if (typeof value !== 'number') return '';
-      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(value);
+      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(value);
     };
 
-    const exportMarkdown = () => {
+    // ---- НОВАЯ ФУНКЦИЯ ЭКСПОРТА ----
+    const exportTxt = () => {
       if (grandTotal.value <= 0) return;
-      const markdownText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
+      const txtText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
 
-      // Создаем и скачиваем файл
-      const blob = new Blob([markdownText], { type: 'text/markdown;charset=utf-8;' });
+      // Формируем имя файла: raschet_zakaza_2025-08_2112rub.txt
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth()+1).padStart(2, '0');
+      const totalSum = Math.round(grandTotal.value);
+      const filename = `raschet_zakaza_${year}-${month}_${totalSum}rub.txt`;
+
+      const blob = new Blob([txtText], { type: 'text/plain;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `raschet_zakaza_${new Date().toISOString().slice(0, 10)}.md`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -98,7 +105,7 @@ createApp({
       addItem,
       removeItem,
       formatCurrency,
-      exportMarkdown,
+      exportTxt,
     };
   }
 }).mount('#app');
