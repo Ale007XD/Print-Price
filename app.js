@@ -1,11 +1,13 @@
 // Этот файл: app.js
-
 const { createApp, ref, reactive, computed, onMounted } = Vue;
 
 createApp({
   setup() {
-    // Данные
-    const prices = ref(null);
+    // --- ДАННЫЕ ---
+    const prices = ref(null); // Цены, загружаемые из JSON
+    const orderItems = ref([]); // Массив со всеми баннерами в заказе
+    
+    // Форма для создания *нового* баннера
     const form = reactive({
       materialId: '',
       width: 1,
@@ -15,14 +17,15 @@ createApp({
       needsCutting: true,
       layoutOption: 'none',
     });
-
+    
+    // --- ЛОГИКА ---
     // Загрузка цен при старте
     onMounted(async () => {
       try {
         const response = await fetch('prices.json');
         prices.value = await response.json();
-        // Устанавливаем значение по умолчанию после загрузки цен
-        if (prices.value && prices.value.materials.length > 0) {
+        // Устанавливаем значение по умолчанию для формы
+        if (prices.value?.materials.length > 0) {
           form.materialId = prices.value.materials[0].id;
         }
       } catch (error) {
@@ -31,46 +34,82 @@ createApp({
       }
     });
 
-    // Реактивный расчёт
-    const calculation = computed(() => {
-      if (!prices.value) {
-        return { total: 0, breakdown: {} };
-      }
-      return calculateTotalCost(form, prices.value);
+    // Вычисляемое свойство, которое рассчитывает стоимость для каждого элемента в заказе
+    const calculatedItems = computed(() => {
+      if (!prices.value || orderItems.value.length === 0) return [];
+      
+      return orderItems.value.map(item => {
+        const result = calculateTotalCost(item, prices.value);
+        // Добавляем текстовые описания для удобного отображения
+        const details = {
+          ...item,
+          materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
+          grommetName: prices.value.grommets[item.grommetOption]?.name || 'Без люверсов'
+        };
+        return {
+          id: item.id,
+          details,
+          result
+        };
+      });
     });
 
-    // Методы
+    // Вычисляемое свойство для общей суммы заказа
+    const grandTotal = computed(() => {
+      return calculatedItems.value.reduce((total, item) => total + item.result.total, 0);
+    });
+
+    // --- МЕТОДЫ ---
+    const addItem = () => {
+      // Простая валидация
+      if (form.width <= 0 || form.height <= 0 || form.quantity <= 0) {
+        alert("Пожалуйста, введите корректные размеры и количество.");
+        return;
+      }
+      
+      const newItem = {
+        ...form,
+        id: Date.now() // Уникальный ID для каждого элемента
+      };
+      orderItems.value.push(newItem);
+    };
+
+    const removeItem = (id) => {
+      orderItems.value = orderItems.value.filter(item => item.id !== id);
+    };
+
     const formatCurrency = (value) => {
       if (typeof value !== 'number') return '';
       return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(value);
     };
 
     const exportToPDF = () => {
-      if (calculation.value.total > 0) {
-        generatePdf(form, calculation.value, prices.value);
+      if (grandTotal.value > 0) {
+        // Передаём рассчитанные элементы и общую сумму
+        generatePdf(calculatedItems.value, grandTotal.value);
       }
     };
-
+    
     // Возвращаем все, что нужно в шаблоне
     return {
-      form,
       prices,
-      calculation,
+      form,
+      orderItems,
+      calculatedItems,
+      grandTotal,
+      addItem,
+      removeItem,
       formatCurrency,
       exportToPDF,
     };
   }
 }).mount('#app');
 
-// Регистрация Service Worker для PWA
+// Регистрация Service Worker (остается без изменений)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/banner-calculator/sw.js') // Укажите путь с учетом имени репозитория
-      .then(registration => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      })
-      .catch(error => {
-        console.log('ServiceWorker registration failed: ', error);
-      });
+    navigator.serviceWorker.register('/banner-calculator/sw.js')
+      .then(reg => console.log('SW registered.', reg))
+      .catch(err => console.error('SW registration failed: ', err));
   });
 }
