@@ -3,7 +3,7 @@ const { createApp, ref, reactive, computed, onMounted } = Vue;
 
 createApp({
   setup() {
-    // --- ДАННЫЕ ---
+    // ... остальной код setup без изменений ...
     const prices = ref(null);
     const orderItems = ref([]);
     
@@ -17,7 +17,6 @@ createApp({
       layoutOption: 'none',
     });
     
-    // --- ЛОГИКА ---
     onMounted(async () => {
       try {
         const response = await fetch('./prices.json');
@@ -38,7 +37,6 @@ createApp({
       return orderItems.value.map(item => {
         const result = calculateTotalCost(item, prices.value);
 
-        // --- Формируем строку с опциями ---
         const options = [];
         if (item.grommetOption === 'corners') {
             options.push(`Люверсы - ${prices.value.grommets.corners.name}`);
@@ -53,7 +51,7 @@ createApp({
         const details = {
           ...item,
           materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
-          optionsString: options.join(', ') // Готовая строка для отображения
+          optionsString: options.join(', ')
         };
         
         return {
@@ -68,7 +66,6 @@ createApp({
       return calculatedItems.value.reduce((total, item) => total + item.result.total, 0);
     });
 
-    // --- МЕТОДЫ ---
     const addItem = () => {
       if (form.width <= 0 || form.height <= 0 || form.quantity <= 0) {
         alert("Пожалуйста, введите корректные размеры и количество.");
@@ -86,9 +83,11 @@ createApp({
       return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(value);
     };
 
-    const exportToPDF = () => {
+    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    const exportToPDF = async () => { // Добавлено ключевое слово async
       if (grandTotal.value > 0) {
-        generatePdf(calculatedItems.value, grandTotal.value);
+        // Теперь мы дожидаемся, пока PDF сгенерируется
+        await generatePdf(calculatedItems.value, grandTotal.value); 
       }
     };
     
