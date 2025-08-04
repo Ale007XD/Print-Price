@@ -1,5 +1,5 @@
 // Этот файл: sw.js
-const CACHE_NAME = 'banner-calculator-cache-v2'; // Увеличиваем версию кэша, чтобы обновиться
+const CACHE_NAME = 'banner-calculator-cache-v3'; // Увеличиваем версию кэша, чтобы обновиться
 const URLS_TO_CACHE = [
   './',
   './index.html',
