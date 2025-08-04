@@ -1,12 +1,9 @@
-// Этот файл: app.js
 const { createApp, ref, reactive, computed, onMounted } = Vue;
 
 createApp({
   setup() {
-    // --- ДАННЫЕ ---
     const prices = ref(null);
     const orderItems = ref([]);
-    const copyButton = ref(null); // Ссылка на кнопку для обратной связи
 
     const form = reactive({
       materialId: '',
@@ -17,8 +14,6 @@ createApp({
       needsCutting: true,
       layoutOption: 'none',
     });
-
-    // --- ЛОГИКА И МЕТОДЫ (ОБЪЯВЛЕНЫ ТОЛЬКО ОДИН РАЗ) ---
 
     onMounted(async () => {
       try {
@@ -36,7 +31,6 @@ createApp({
 
     const calculatedItems = computed(() => {
       if (!prices.value || orderItems.value.length === 0) return [];
-      
       return orderItems.value.map(item => {
         const result = calculateTotalCost(item, prices.value);
         const options = [];
@@ -49,13 +43,11 @@ createApp({
         }
         options.push(`Резка - ${item.needsCutting ? 'Да' : 'Нет'}`);
         options.push(`Макет - ${item.layoutOption === 'create' ? 'Разработка' : 'Свой'}`);
-        
         const details = {
           ...item,
           materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
           optionsString: options.join(', ')
         };
-        
         return { id: item.id, details, result };
       });
     });
@@ -81,49 +73,37 @@ createApp({
       return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(value);
     };
 
-    const copyMarkdown = () => {
+    const exportMarkdown = () => {
       if (grandTotal.value <= 0) return;
       const markdownText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
-      const textArea = document.getElementById('markdown-output');
-      
-      textArea.value = markdownText;
-      textArea.select();
-      textArea.setSelectionRange(0, 99999); // Для мобильных устройств
 
-      try {
-        document.execCommand('copy');
-        if (copyButton.value) {
-            const originalText = copyButton.value.textContent;
-            copyButton.value.textContent = 'Скопировано!';
-            copyButton.value.style.backgroundColor = '#27ae60';
-            setTimeout(() => {
-                copyButton.value.textContent = originalText;
-                copyButton.value.style.backgroundColor = '#42b883';
-            }, 2000);
-        }
-      } catch (err) {
-        console.error('Не удалось скопировать текст: ', err);
-        alert('Не удалось скопировать текст.');
-      }
+      // Создаем и скачиваем файл
+      const blob = new Blob([markdownText], { type: 'text/markdown;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `raschet_zakaza_${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     };
-    
-    // Возвращаем все необходимые данные и функции в шаблон
+
     return {
       prices,
       form,
       orderItems,
       calculatedItems,
       grandTotal,
-      copyButton,
       addItem,
       removeItem,
       formatCurrency,
-      copyMarkdown,
+      exportMarkdown,
     };
   }
 }).mount('#app');
 
-// Регистрация Service Worker
+// Регистрация service worker для оффлайн-режима
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
