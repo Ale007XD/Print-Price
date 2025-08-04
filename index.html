@@ -76,7 +76,7 @@
       
       <div class="grand-total" v-if="calculatedItems.length > 0">
         <h3>Общая стоимость заказа: <span>{{ formatCurrency(grandTotal) }}</span></h3>
-        <button @click="exportMarkdown" :disabled="grandTotal === 0">Скачать расчёт (Markdown)</button>
+        <button @click="exportTxt" :disabled="grandTotal === 0">Скачать расчёт (txt)</button>
       </div>
     </div>
   </div>
