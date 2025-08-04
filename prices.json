@@ -1,0 +1,20 @@
+{
+  "materials": [
+    { "id": "banner_340", "name": "Баннерная ткань 300-340 г/м² (Китай)", "price": 250 },
+    { "id": "banner_440", "name": "Баннерная ткань 440 г/м² (Китай)", "price": 350 },
+    { "id": "banner_520", "name": "Литая баннерная ткань 520 г/м² (Германия)", "price": 500 }
+  ],
+  "grommets": {
+    "none": { "name": "Без люверсов", "price": 0 },
+    "corners": { "name": "4 по углам", "price": 100 },
+    "perimeter": { "name": "По периметру (шаг 0.25м)", "pricePerPiece": 20, "step": 0.25 }
+  },
+  "cutting": {
+    "pricePerMeter": 10
+  },
+  "layout": {
+    "small": { "name": "Макет до 3м²", "price": 1000, "maxArea": 3 },
+    "medium": { "name": "Макет 3.01-6м²", "pricePerSqM": 200, "maxArea": 6 },
+    "large": { "name": "Макет >6.01м²", "pricePerSqM": 150 }
+  }
+}
