@@ -4,6 +4,7 @@ createApp({
   setup() {
     const prices = ref(null);
     const orderItems = ref([]);
+    const loading = ref(true);
 
     const form = reactive({
       materialId: '',
@@ -11,7 +12,7 @@ createApp({
       height: 2,
       quantity: 1,
       grommetOption: 'none',
-      needsCutting: true, // переменная осталась!
+      needsCutting: true,
       layoutOption: 'none',
     });
 
@@ -19,11 +20,14 @@ createApp({
       try {
         const response = await fetch('./prices.json');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        prices.value = await response.json();
+        const data = await response.json();
+        prices.value = data;
+        loading.value = false;
         if (prices.value?.materials.length > 0) {
           form.materialId = prices.value.materials[0].id;
         }
       } catch (error) {
+        loading.value = false;
         console.error("Не удалось загрузить файл с ценами:", error);
         alert("Критическая ошибка: не удалось загрузить прайс-лист.");
       }
@@ -41,7 +45,6 @@ createApp({
         } else {
             options.push('Люверсы - Без');
         }
-        // Опция резки — остаётся в коде (вывод), логика работает!
         options.push(`Резка - ${item.needsCutting ? 'Да' : 'Нет'}`);
         options.push(`Макет - ${item.layoutOption === 'create' ? 'Разработка' : 'Свой'}`);
         const details = {
@@ -78,7 +81,6 @@ createApp({
       if (grandTotal.value <= 0) return;
       const txtText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
 
-      // Формируем имя файла: raschet_zakaza_2025-08_2112rub.txt
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth()+1).padStart(2, '0');
@@ -102,6 +104,7 @@ createApp({
       orderItems,
       calculatedItems,
       grandTotal,
+      loading,
       addItem,
       removeItem,
       formatCurrency,
@@ -110,7 +113,6 @@ createApp({
   }
 }).mount('#app');
 
-// Регистрация service worker для оффлайн-режима
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
