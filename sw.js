@@ -10,7 +10,7 @@ const URLS_TO_CACHE = [
   './manifest.json',
   './icons/pwa-192x192.png',
   './icons/pwa-512x512.png',
-  'https://unpkg.com/vue@3/dist/vue.global.js'
+  './vendor/vue.global.js'
 ];
 
 self.addEventListener('install', event => {
