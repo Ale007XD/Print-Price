@@ -86,7 +86,13 @@
           <option value="none">Свой макет</option>
           <option value="create">Нужна разработка макета</option>
         </select>
-        <button @click="exportTxt" :disabled="grandTotal === 0" class="add-button">Скачать расчёт (txt)</button>
+
+        <button @click="addItem" class="add-button">Добавить баннер в расчёт</button>
+        <button @click="exportTxt"
+                :disabled="calculatedItems.length === 0"
+                style="margin-top: 0.5rem;">
+          Скачать расчёт (txt)
+        </button>
       </div>
 
       <div class="order-list" v-if="calculatedItems.length > 0">
