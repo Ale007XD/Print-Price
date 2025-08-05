@@ -47,7 +47,8 @@
     <div class="contacts-header">
       Алексей, <a href="tel:+79140022777" style="color:#217346;text-decoration:none;">8-914-00-22-777</a> (WA, TG)
     </div>
-    <div v-if="!prices" class="loading-message">Загрузка данных...</div>
+
+    <div v-if="loading || !prices" class="loading-message">Загрузка данных...</div>
     <div v-else>
       <div class="form-container">
         <h2>Добавить новый баннер</h2>
@@ -55,25 +56,31 @@
           Готовый к типографской печати <b>макет текстового баннера всего за 299&nbsp;рублей!</b><br>
           Открывайте Telegram-бота <b>@BannerPrintBot</b> и следуйте инструкции!
         </div>
+
         <label for="material">Материал:</label>
-        <select id="material" v-model="form.materialId">
-          <option v-for="mat in prices.materials" :key="mat.id" :value="mat.id">{{ mat.name }}</option>
-        </select>
+        <template v-if="prices && prices.materials && prices.materials.length">
+          <select id="material" v-model="form.materialId">
+            <option v-for="mat in prices.materials" :key="mat.id" :value="mat.id">{{ mat.name }}</option>
+          </select>
+        </template>
+        <span v-else>Загрузка материалов...</span>
+
         <label for="width">Ширина (м):</label>
         <input type="number" id="width" v-model.number="form.width" min="0.5" max="3" step="0.5">
+
         <label for="height">Высота (м):</label>
         <input type="number" id="height" v-model.number="form.height" min="0.5" max="30" step="0.5">
+
         <label for="quantity">Количество (шт):</label>
         <input type="number" id="quantity" v-model.number="form.quantity" min="1" step="1">
+
         <label for="grommets">Люверсы:</label>
         <select id="grommets" v-model="form.grommetOption">
           <option value="none">Без люверсов</option>
           <option value="corners">4 по углам</option>
           <option value="perimeter">По периметру</option>
         </select>
-        <!--
-        <label><input type="checkbox" v-model="form.needsCutting"> Резка по периметру</label>
-        -->
+        <!-- <label><input type="checkbox" v-model="form.needsCutting"> Резка по периметру</label> -->
         <label for="layout">Макет:</label>
         <select id="layout" v-model="form.layoutOption">
           <option value="none">Свой макет</option>
