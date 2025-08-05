@@ -12,6 +12,8 @@
     .loading-message { text-align: center; padding: 3rem; font-size: 1.2rem; color: #555; }
     .form-container { background-color: #f9f9f9; padding: 1.5rem; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 2rem; }
     h1, h2, h3 { color: #333; }
+    h1 { margin-bottom: 0.4em; }
+    .contacts-header { color: #217346; font-size: 1.15rem; font-weight: bold; margin-bottom: 1.1em; }
     h2 { border-bottom: 2px solid #42b883; padding-bottom: 0.5rem; margin-top: 0; }
     label { display: block; margin-top: 1rem; font-weight: bold; color: #555; }
     input[type="number"], select { width: 100%; padding: 0.75rem; margin-top: 0.25rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
@@ -26,16 +28,33 @@
     .order-list-item .remove-btn:hover { background: #c0392b; }
     .grand-total { margin-top: 2rem; text-align: right; border-top: 2px solid #333; padding-top: 1rem; }
     .grand-total span { color: #42b883; font-size: 2.2rem; font-weight: bold; }
+    .maket-info {
+      background: #f2f8f0;
+      color: #146532;
+      border: 1px solid #b5ebbb;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1.3rem;
+      line-height: 1.5;
+      font-size: 1.05rem;
+    }
     hr { border: 0; border-top: 1px solid #eee; margin: 1rem 0; }
   </style>
 </head>
 <body>
   <div id="app">
     <h1>Калькулятор баннеров</h1>
+    <div class="contacts-header">
+      Алексей, <a href="tel:+79140022777" style="color:#217346;text-decoration:none;">8-914-00-22-777</a> (WA, TG)
+    </div>
     <div v-if="!prices" class="loading-message">Загрузка данных...</div>
     <div v-else>
       <div class="form-container">
         <h2>Добавить новый баннер</h2>
+        <div class="maket-info">
+          Готовый к типографской печати <b>макет текстового баннера всего за 299&nbsp;рублей!</b><br>
+          Открывайте Telegram-бота <b>@BannerPrintBot</b> и следуйте инструкции!
+        </div>
         <label for="material">Материал:</label>
         <select id="material" v-model="form.materialId">
           <option v-for="mat in prices.materials" :key="mat.id" :value="mat.id">{{ mat.name }}</option>
@@ -52,13 +71,15 @@
           <option value="corners">4 по углам</option>
           <option value="perimeter">По периметру</option>
         </select>
+        <!--
         <label><input type="checkbox" v-model="form.needsCutting"> Резка по периметру</label>
+        -->
         <label for="layout">Макет:</label>
         <select id="layout" v-model="form.layoutOption">
           <option value="none">Свой макет</option>
           <option value="create">Нужна разработка макета</option>
         </select>
-        <button @click="addItem" class="add-button">Добавить баннер в расчёт</button>
+        <button @click="exportTxt" :disabled="grandTotal === 0" class="add-button">Скачать расчёт (txt)</button>
       </div>
 
       <div class="order-list" v-if="calculatedItems.length > 0">
@@ -76,12 +97,11 @@
       
       <div class="grand-total" v-if="calculatedItems.length > 0">
         <h3>Общая стоимость заказа: <span>{{ formatCurrency(grandTotal) }}</span></h3>
-        <button @click="exportTxt" :disabled="grandTotal === 0">Скачать расчёт (txt)</button>
       </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="./vendor/vue.global.js"></script>
   <script src="./calculation.js"></script>
   <script src="./markdownExporter.js"></script>
   <script src="./app.js"></script>
