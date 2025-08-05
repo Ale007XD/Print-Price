@@ -81,6 +81,8 @@ createApp({
       if (grandTotal.value <= 0) return;
       const txtText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
 
+      // Добавляем BOM!
+      const BOM = '\uFEFF';
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth()+1).padStart(2, '0');
