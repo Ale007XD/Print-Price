@@ -11,7 +11,7 @@ createApp({
       height: 2,
       quantity: 1,
       grommetOption: 'none',
-      needsCutting: true,
+      needsCutting: true, // переменная осталась!
       layoutOption: 'none',
     });
 
@@ -41,6 +41,7 @@ createApp({
         } else {
             options.push('Люверсы - Без');
         }
+        // Опция резки — остаётся в коде (вывод), логика работает!
         options.push(`Резка - ${item.needsCutting ? 'Да' : 'Нет'}`);
         options.push(`Макет - ${item.layoutOption === 'create' ? 'Разработка' : 'Свой'}`);
         const details = {
@@ -73,7 +74,6 @@ createApp({
       return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(value);
     };
 
-    // ---- НОВАЯ ФУНКЦИЯ ЭКСПОРТА ----
     const exportTxt = () => {
       if (grandTotal.value <= 0) return;
       const txtText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
