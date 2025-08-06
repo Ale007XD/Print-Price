@@ -16,6 +16,10 @@ createApp({
       layoutOption: 'none',
     });
 
+    // Для модального окна копирования
+    const showTextExport = ref(false);
+    const markdownText = ref('');
+
     onMounted(async () => {
       try {
         const response = await fetch('./prices.json');
@@ -77,19 +81,17 @@ createApp({
       return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(value);
     };
 
+    // ------- Экспорт как TXT + BOM -------
     const exportTxt = () => {
       if (grandTotal.value <= 0) return;
       const txtText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
-
-      // Добавляем BOM!
       const BOM = '\uFEFF';
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth()+1).padStart(2, '0');
       const totalSum = Math.round(grandTotal.value);
       const filename = `raschet_zakaza_${year}-${month}_${totalSum}rub.txt`;
-
-      const blob = new Blob([txtText], { type: 'text/plain;charset=utf-8;' });
+      const blob = new Blob([BOM + txtText], { type: 'text/plain;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -98,6 +100,32 @@ createApp({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    };
+
+    // ------- Показать/копировать расчёт -------
+    const showExport = () => {
+      markdownText.value = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
+      showTextExport.value = true;
+    };
+
+    const copyResultMarkdown = () => {
+      // Для новых браузеров
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(markdownText.value)
+          .then(() => alert("Текст скопирован в буфер обмена!"))
+          .catch(() => fallbackCopy());
+      } else {
+        fallbackCopy();
+      }
+      function fallbackCopy() {
+        const ta = document.createElement('textarea');
+        ta.value = markdownText.value;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert("Текст скопирован в буфер обмена!");
+      }
     };
 
     return {
@@ -111,6 +139,10 @@ createApp({
       removeItem,
       formatCurrency,
       exportTxt,
+      showExport,
+      showTextExport,
+      markdownText,
+      copyResultMarkdown
     };
   }
 }).mount('#app');
