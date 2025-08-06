@@ -1,4 +1,4 @@
-const CACHE_NAME = 'banner-calculator-cache-v12';
+const CACHE_NAME = 'banner-calculator-cache-v14';
 const URLS_TO_CACHE = [
   './',
   './index.html',
