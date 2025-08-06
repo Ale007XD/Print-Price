@@ -13,7 +13,6 @@ function generateMarkdown(calculatedItems, grandTotal, formatCurrency) {
   });
 
   markdown += `ВСЕГО К ОПЛАТЕ: ${formatCurrency(grandTotal)}\n\n`;
-
   markdown += `---\n`;
   markdown += `Алексей, 8-914-00-22-777 (WA, TG)\n\n`;
   markdown += `Сайт: https://ale007xd.github.io/Print-Price/\n`;
