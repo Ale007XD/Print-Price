@@ -14,9 +14,11 @@ function generateMarkdown(calculatedItems, grandTotal, formatCurrency) {
 
   markdown += `ВСЕГО К ОПЛАТЕ: ${formatCurrency(grandTotal)}\n\n`;
   markdown += `---\n`;
-  markdown += `Алексей, 8-914-00-22-777 (WA, TG)\n\n`;
+  markdown += `Алексей, 8-914-00-22-777 (WA, TG)\n`;
+  markdown += `WhatsApp: https://wa.me/79140022777\n`;
+  markdown += `Telegram: https://t.me/+79140022777\n\n`;
   markdown += `Сайт: https://ale007xd.github.io/Print-Price/\n`;
-  markdown += `Бот для заказа макета: @BannerPrintBot\n`;
+  markdown += `Бот для заказа макета: [@BannerPrintBot](https://t.me/BannerPrintBot)\n`;
 
   return markdown;
 }
