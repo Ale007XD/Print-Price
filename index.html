@@ -43,13 +43,24 @@
     .modal-window { background:white;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222; }
     .modal-window button { margin-top: 0.75em; }
     .modal-window textarea { font-family: inherit; }
+
+    /* Контакты цветом! */
+    .whatsapp { color: #25D366 !important; font-weight: bold; text-decoration: none; margin-left: 0.8em; }
+    .whatsapp:hover { text-decoration: underline; }
+    .telegram, .telegram-bot { color: #0088cc !important; font-weight: bold; text-decoration: none; margin-left: 0.8em; }
+    .telegram:hover, .telegram-bot:hover { text-decoration: underline; }
+    .call { color: #555 !important; font-weight: bold; text-decoration: none; margin-left: 0.8em; }
+    .call:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <div id="app">
     <h1>Калькулятор баннеров</h1>
     <div class="contacts-header">
-      Алексей, <a href="tel:+79140022777" style="color:#217346;text-decoration:none;">8-914-00-22-777</a> (WA, TG)
+      Алексей,
+      <a href="tel:+79140022777" class="call">8-914-00-22-777</a>
+      <a href="https://wa.me/79140022777" class="whatsapp" target="_blank" rel="noopener">💬 WhatsApp</a>
+      <a href="https://t.me/+79140022777" class="telegram" target="_blank" rel="noopener">✈️ Telegram</a>
     </div>
 
     <div v-if="loading || !prices" class="loading-message">Загрузка данных...</div>
@@ -58,7 +69,7 @@
         <h2>Добавить новый баннер</h2>
         <div class="maket-info">
           Готовый к типографской печати <b>макет текстового баннера всего за 299&nbsp;рублей!</b><br>
-          Открывайте Telegram-бота <b>@BannerPrintBot</b> и следуйте инструкции!
+          Открывайте Telegram-бота <a href="https://t.me/BannerPrintBot" class="telegram-bot" target="_blank" rel="noopener">@BannerPrintBot</a> и следуйте инструкции!
         </div>
 
         <label for="material">Материал:</label>
