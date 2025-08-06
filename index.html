@@ -19,7 +19,7 @@
     input[type="number"], select { width: 100%; padding: 0.75rem; margin-top: 0.25rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     button { width: 100%; padding: 0.75rem; background-color: #42b883; color: white; border: none; border-radius: 4px; margin-top: 1.5rem; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
     button:hover { background-color: #36a371; }
-    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    button:disabled { background-color: #ccc !important; cursor: not-allowed; }
     .add-button { background-color: #3498db; }
     .add-button:hover { background-color: #2980b9; }
     .order-list-item { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; position: relative; }
@@ -39,6 +39,10 @@
       font-size: 1.05rem;
     }
     hr { border: 0; border-top: 1px solid #eee; margin: 1rem 0; }
+    .modal-backdrop { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(50,55,60,0.45);z-index:10000; }
+    .modal-window { background:white;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222; }
+    .modal-window button { margin-top: 0.75em; }
+    .modal-window textarea { font-family: inherit; }
   </style>
 </head>
 <body>
@@ -88,11 +92,11 @@
         </select>
 
         <button @click="addItem" class="add-button">Добавить баннер в расчёт</button>
-        <button @click="exportTxt"
-                :disabled="calculatedItems.length === 0"
-                style="margin-top: 0.5rem;">
-          Скачать расчёт (txt)
-        </button>
+        <button @click="showExport" :disabled="calculatedItems.length === 0" style="background:#27ae60;margin-top:0.7em;">Показать расчёт для копирования</button>
+        <button @click="exportTxt" :disabled="calculatedItems.length === 0" style="margin-top:0.5rem;">Скачать расчёт (txt)</button>
+        <div style="font-size:0.97em;color:#456;margin:1.1em 0 0.2em;">
+          Если при открытии файла на телефоне вместо текста видите непонятные знаки — просто воспользуйтесь кнопкой <b>"Показать расчёт для копирования"</b> и вставьте его в мессенджер или заметки на вашем смартфоне.
+        </div>
       </div>
 
       <div class="order-list" v-if="calculatedItems.length > 0">
@@ -110,6 +114,17 @@
       
       <div class="grand-total" v-if="calculatedItems.length > 0">
         <h3>Общая стоимость заказа: <span>{{ formatCurrency(grandTotal) }}</span></h3>
+      </div>
+    </div>
+
+    <!-- Модальное окно для копирования расчёта -->
+    <div v-if="showTextExport" class="modal-backdrop">
+      <div class="modal-window">
+        <h2>Готовый расчёт для копирования</h2>
+        <textarea readonly style="width:100%;height:250px;font-size:1.07rem;resize:vertical;" ref="resultTextarea">{{ markdownText }}</textarea>
+        <button @click="copyResultMarkdown" style="margin-top:1em;">Скопировать</button>
+        <div style="font-size:0.97em;margin:0.8em 0;color:#555;">Если копирование не сработало — выделите текст вручную</div>
+        <button @click="showTextExport=false" style="margin-top:0.5em;background:#ccc;">Закрыть</button>
       </div>
     </div>
   </div>
