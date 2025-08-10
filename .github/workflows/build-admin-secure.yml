@@ -17,36 +17,67 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check secrets presence (no values printed)
+      - name: Check secrets presence
         run: |
-          if [ -z "${{ secrets.ADMIN_PRICES_JSON }}" ]; then echo "ADMIN_PRICES_JSON is EMPTY"; exit 1; else echo "ADMIN_PRICES_JSON is SET"; fi
-          if [ -z "${{ secrets.ADMIN_LOGIN }}" ]; then echo "ADMIN_LOGIN is EMPTY"; exit 1; else echo "ADMIN_LOGIN is SET"; fi
-          if [ -z "${{ secrets.ADMIN_PASSWORD }}" ]; then echo "ADMIN_PASSWORD is EMPTY"; exit 1; else echo "ADMIN_PASSWORD is SET"; fi
+          test -n "${{ secrets.MATERIAL_BANNER_340_PRICE }}" || (echo "MATERIAL_BANNER_340_PRICE is EMPTY" && exit 1)
+          test -n "${{ secrets.MATERIAL_BANNER_440_PRICE }}" || (echo "MATERIAL_BANNER_440_PRICE is EMPTY" && exit 1)
+          test -n "${{ secrets.MATERIAL_BANNER_520_PRICE }}" || (echo "MATERIAL_BANNER_520_PRICE is EMPTY" && exit 1)
+          test -n "${{ secrets.GROMMETS_CORNERS_PRICE }}" || (echo "GROMMETS_CORNERS_PRICE is EMPTY" && exit 1)
+          test -n "${{ secrets.GROMMETS_PERIMETER_PRICE_PER_PIECE }}" || (echo "GROMMETS_PERIMETER_PRICE_PER_PIECE is EMPTY" && exit 1)
+          test -n "${{ secrets.GROMMETS_PERIMETER_STEP }}" || (echo "GROMMETS_PERIMETER_STEP is EMPTY" && exit 1)
+          test -n "${{ secrets.CUTTING_PRICE_PER_METER }}" || (echo "CUTTING_PRICE_PER_METER is EMPTY" && exit 1)
+          test -n "${{ secrets.ADMIN_LOGIN }}" || (echo "ADMIN_LOGIN is EMPTY" && exit 1)
+          test -n "${{ secrets.ADMIN_PASSWORD }}" || (echo "ADMIN_PASSWORD is EMPTY" && exit 1)
 
-      # 1) Восстанавливаем приватный прайс из секрета (не попадает в git)
-      - name: Restore admin prices from secret
-        env:
-          ADMIN_PRICES_JSON: ${{ secrets.ADMIN_PRICES_JSON }}
-        run: |
-          set -e
-          printf "%s" "$ADMIN_PRICES_JSON" > admin-prices.src.json
-
-      # 2) Готовим соль и шифруем lock + prices (PBKDF2-HMAC-SHA256, 200k итераций, AES-256-GCM)
-      - name: Prepare locks
+      - name: Prepare locks and encrypted prices from secrets
         env:
           ADMIN_LOGIN: ${{ secrets.ADMIN_LOGIN }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          MATERIAL_BANNER_340_PRICE: ${{ secrets.MATERIAL_BANNER_340_PRICE }}
+          MATERIAL_BANNER_440_PRICE: ${{ secrets.MATERIAL_BANNER_440_PRICE }}
+          MATERIAL_BANNER_520_PRICE: ${{ secrets.MATERIAL_BANNER_520_PRICE }}
+          GROMMETS_CORNERS_PRICE: ${{ secrets.GROMMETS_CORNERS_PRICE }}
+          GROMMETS_PERIMETER_PRICE_PER_PIECE: ${{ secrets.GROMMETS_PERIMETER_PRICE_PER_PIECE }}
+          GROMMETS_PERIMETER_STEP: ${{ secrets.GROMMETS_PERIMETER_STEP }}
+          CUTTING_PRICE_PER_METER: ${{ secrets.CUTTING_PRICE_PER_METER }}
         run: |
           set -e
           openssl rand -out admin-lock.salt 16
-
           node -e '
           const fs=require("fs"),crypto=require("crypto");
+
           const login=process.env.ADMIN_LOGIN||"", pass=process.env.ADMIN_PASSWORD||"";
           if(!login||!pass){console.error("Missing ADMIN_LOGIN or ADMIN_PASSWORD");process.exit(1)}
+
           const salt=fs.readFileSync("admin-lock.salt");
           const base=Buffer.from(`${login}:${pass}`,"utf8");
           const key=crypto.pbkdf2Sync(base,salt,200000,32,"sha256");
+
+          function toNum(name) {
+            const v = process.env[name];
+            if (v===undefined || v===null || v==="") { console.error(`Missing ${name}`); process.exit(1); }
+            const n = Number(v);
+            if (!Number.isFinite(n)) { console.error(`Bad number in ${name}: ${v}`); process.exit(1); }
+            return n;
+          }
+
+          const prices = {
+            materials: [
+              { id: "banner_340", name: "Баннер 300-340 г/м² (админ)", price: toNum("MATERIAL_BANNER_340_PRICE") },
+              { id: "banner_440", name: "Баннер 440 г/м² (админ)", price: toNum("MATERIAL_BANNER_440_PRICE") },
+              { id: "banner_520", name: "Литая 520 г/м² (админ)", price: toNum("MATERIAL_BANNER_520_PRICE") }
+            ],
+            grommets: {
+              none: { name: "Без люверсов", price: 0 },
+              corners: { name: "4 по углам", price: toNum("GROMMETS_CORNERS_PRICE") },
+              perimeter: {
+                name: "По периметру",
+                pricePerPiece: toNum("GROMMETS_PERIMETER_PRICE_PER_PIECE"),
+                step: toNum("GROMMETS_PERIMETER_STEP")
+              }
+            },
+            cutting: { pricePerMeter: toNum("CUTTING_PRICE_PER_METER") }
+          };
 
           function seal(obj,outFile){
             const iv=crypto.randomBytes(12);
@@ -57,15 +88,10 @@ jobs:
             fs.writeFileSync(outFile, Buffer.concat([iv, Buffer.concat([ct, tag])]));
           }
 
-          // Мини-замок для проверки пары логин/пароль
           seal({ok:true,v:1}, "admin-lock.json.enc");
-
-          // Приватный прайс
-          const prices=JSON.parse(fs.readFileSync("admin-prices.src.json","utf8"));
           seal(prices, "admin-prices.json.enc");
           '
 
-      # 3) Диагностика: проверим, что нужные файлы реально существуют
       - name: Debug list
         run: |
           pwd
@@ -74,12 +100,6 @@ jobs:
           ls -la admin.html admin.js crypto.js sw.js || true
           ls -la admin-lock.salt admin-lock.json.enc admin-prices.json.enc
 
-      # 4) Удаляем открытый исходник прайса до публикации
-      - name: Remove plaintext prices before publish
-        run: |
-          rm -f admin-prices.src.json
-
-      # 5) Публикация артефакта Pages из корня
       - name: Upload artifact to Pages
         uses: actions/upload-pages-artifact@v3
         with:
