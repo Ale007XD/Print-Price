@@ -1,3 +1,10 @@
+name: Debug list
+run: |
+pwd
+ls -la
+echo "--- admin files ---"
+ls -la admin.html admin.js crypto.js sw.js admin-lock.salt admin-lock.json.enc admin-prices.json.enc || true
+
 name: Build Admin Secure
 
 on:
