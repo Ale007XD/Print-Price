@@ -3,10 +3,9 @@ const { createApp, ref, reactive, computed } = Vue;
 createApp({
   setup() {
     const prices = ref({
-      // Ожидается, что вы грузите публичный прайс как раньше (prices.json)
       materials: [],
       grommets: { none: { name: 'Без', price: 0 }, corners: { name: '4 по углам', price: 0 }, perimeter: { name: 'По периметру', pricePerPiece: 0, step: 0.25 } },
-      layout: { small: null, medium: null, large: null } // будет перезаписано вашим загрузчиком
+      layout: null
     });
     const orderItems = ref([]);
 
@@ -19,7 +18,10 @@ createApp({
       layoutOption: 'none'
     });
 
-    // Пример загрузки публичного прайса (оставьте вашу реализацию)
+    const showTextExport = ref(false);
+    const markdownText = ref('');
+
+    // Загрузка публичного прайса (как в исходном проекте, из prices.json)
     (async function loadPublicPrices() {
       try {
         const r = await fetch('./prices.json', { cache: 'no-store' });
@@ -37,7 +39,8 @@ createApp({
     const calculatedItems = computed(() => {
       if (!prices.value || orderItems.value.length === 0) return [];
       return orderItems.value.map(item => {
-        const result = calculateTotalCost(item, prices.value); // публичная версия учитывает макет
+        // Публичная версия использует calculateTotalCost (с макетом, без реза)
+        const result = calculateTotalCost(item, prices.value);
         const opts = [];
         if (item.grommetOption === 'corners') {
           opts.push(`Люверсы - ${prices.value.grommets.corners?.name || '4 по углам'}`);
@@ -99,12 +102,11 @@ createApp({
       return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(value);
     }
 
-    const showTextExport = ref(false);
-    const markdownText = ref('');
     function showExport() {
       markdownText.value = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
       showTextExport.value = true;
     }
+
     function exportTxt() {
       if (grandTotal.value <= 0) return;
       const txtText = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
@@ -113,13 +115,14 @@ createApp({
       const year = now.getFullYear();
       const month = String(now.getMonth()+1).padStart(2, '0');
       const totalSum = Math.round(grandTotal.value);
-      const filename = `raschet_${year}-${month}_${totalSum}rub.txt`;
+      const filename = `raschet_zakaza_${year}-${month}_${totalSum}rub.txt`;
       const blob = new Blob([BOM + txtText], { type: 'text/plain;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
+
     function copyResultMarkdown() {
       const text = markdownText.value || '';
       if (navigator.clipboard) {
@@ -127,7 +130,8 @@ createApp({
       } else fallback();
       function fallback() {
         const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
-        ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('Скопировано!');
+        ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        alert('Скопировано!');
       }
     }
 
