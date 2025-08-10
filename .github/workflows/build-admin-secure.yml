@@ -1,0 +1,83 @@
+name: Build Admin Secure
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1) Восстанавливаем приватный прайс из секрета (никогда не попадает в репозиторий/историю)
+      - name: Restore admin prices from secret
+        env:
+          ADMIN_PRICES_JSON: ${{ secrets.ADMIN_PRICES_JSON }}
+        run: |
+          if [ -z "$ADMIN_PRICES_JSON" ]; then
+            echo "Missing ADMIN_PRICES_JSON secret" >&2
+            exit 1
+          fi
+          printf "%s" "$ADMIN_PRICES_JSON" > admin-prices.src.json
+
+      # 2) Готовим соль и шифруем lock + prices с ключом PBKDF2(login:password,salt,200k,32)
+      - name: Prepare locks
+        env:
+          ADMIN_LOGIN: ${{ secrets.ADMIN_LOGIN }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          set -e
+          openssl rand -out admin-lock.salt 16
+
+          node -e '
+          const fs=require("fs"),crypto=require("crypto");
+          const login=process.env.ADMIN_LOGIN||"", pass=process.env.ADMIN_PASSWORD||"";
+          if(!login||!pass){console.error("Missing ADMIN_LOGIN or ADMIN_PASSWORD");process.exit(1)}
+          const salt=fs.readFileSync("admin-lock.salt");
+          const base=Buffer.from(`${login}:${pass}`,"utf8");
+          const key=crypto.pbkdf2Sync(base,salt,200000,32,"sha256");
+
+          function seal(obj,outFile){
+            const iv=crypto.randomBytes(12);
+            const cipher=crypto.createCipheriv("aes-256-gcm",key,iv);
+            const pt=Buffer.from(JSON.stringify(obj),"utf8");
+            const ct=Buffer.concat([cipher.update(pt), cipher.final()]);
+            const tag=cipher.getAuthTag();
+            fs.writeFileSync(outFile, Buffer.concat([iv, Buffer.concat([ct, tag])]));
+          }
+
+          // Мини-замок для валидации пары логин/пароль
+          seal({ok:true,v:1}, "admin-lock.json.enc");
+
+          // Приватный прайс
+          const prices=JSON.parse(fs.readFileSync("admin-prices.src.json","utf8"));
+          seal(prices, "admin-prices.json.enc");
+          '
+
+      # 3) Удаляем открытый исходник прайса до публикации
+      - name: Remove plaintext prices before publish
+        run: |
+          rm -f admin-prices.src.json
+
+      # 4) Публикация артефакта Pages
+      - name: Upload artifact to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
