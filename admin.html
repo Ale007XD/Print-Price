@@ -56,25 +56,19 @@
         </select>
       </label>
       <label>Ширина (м):
-        <input type="number" v-model.number="form.width" min="0.5" max="3" step="0.5">
+        <input type="number" v-model.number="form.width" min="0.5" max="3" step="0.5" placeholder="Напр., 1.5">
       </label>
       <label>Высота (м):
-        <input type="number" v-model.number="form.height" min="0.5" max="30" step="0.5">
+        <input type="number" v-model.number="form.height" min="0.5" max="30" step="0.5" placeholder="Напр., 2">
       </label>
       <label>Количество (шт):
-        <input type="number" v-model.number="form.quantity" min="1" step="1">
+        <input type="number" v-model.number="form.quantity" min="1" step="1" placeholder="1">
       </label>
       <label>Люверсы:
         <select v-model="form.grommetOption">
           <option value="none">Без люверсов</option>
           <option value="corners">4 по углам</option>
           <option value="perimeter">По периметру</option>
-        </select>
-      </label>
-      <label>Резка:
-        <select v-model="form.needsCutting">
-          <option :value="true">Да</option>
-          <option :value="false">Нет</option>
         </select>
       </label>
 
