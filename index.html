@@ -1,148 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Калькулятор печати баннеров</title>
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#42b883">
+  <meta charset="utf-8">
+  <title>Калькулятор баннеров — публичная версия</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="manifest" href="manifest.json">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1em; background-color: #f4f4f4; }
-    #app { max-width: 900px; margin: 0 auto; background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .loading-message { text-align: center; padding: 3rem; font-size: 1.2rem; color: #555; }
-    .form-container { background-color: #f9f9f9; padding: 1.5rem; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 2rem; }
-    h1, h2, h3 { color: #333; }
-    h1 { margin-bottom: 0.4em; }
-    .contacts-header { color: #217346; font-size: 1.15rem; font-weight: bold; margin-bottom: 1.1em; }
-    h2 { border-bottom: 2px solid #42b883; padding-bottom: 0.5rem; margin-top: 0; }
-    label { display: block; margin-top: 1rem; font-weight: bold; color: #555; }
-    input[type="number"], select { width: 100%; padding: 0.75rem; margin-top: 0.25rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    button { width: 100%; padding: 0.75rem; background-color: #42b883; color: white; border: none; border-radius: 4px; margin-top: 1.5rem; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
-    button:hover { background-color: #36a371; }
-    button:disabled { background-color: #ccc !important; cursor: not-allowed; }
-    .add-button { background-color: #3498db; }
-    .add-button:hover { background-color: #2980b9; }
-    .order-list-item { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; position: relative; }
-    .order-list-item p { margin: 0.5rem 0; }
-    .order-list-item .remove-btn { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
-    .order-list-item .remove-btn:hover { background: #c0392b; }
-    .grand-total { margin-top: 2rem; text-align: right; border-top: 2px solid #333; padding-top: 1rem; }
-    .grand-total span { color: #42b883; font-size: 2.2rem; font-weight: bold; }
-    .maket-info {
-      background: #f2f8f0;
-      color: #146532;
-      border: 1px solid #b5ebbb;
-      border-radius: 6px;
-      padding: 1rem;
-      margin-bottom: 1.3rem;
-      line-height: 1.5;
-      font-size: 1.05rem;
-    }
-    hr { border: 0; border-top: 1px solid #eee; margin: 1rem 0; }
-    .modal-backdrop { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(50,55,60,0.45);z-index:10000; }
-    .modal-window { background:white;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222; }
-    .modal-window button { margin-top: 0.75em; }
-    .modal-window textarea { font-family: inherit; }
-
-    /* Контакты цветом! */
-    .whatsapp { color: #25D366 !important; font-weight: bold; text-decoration: none; margin-left: 0.8em; }
-    .whatsapp:hover { text-decoration: underline; }
-    .telegram, .telegram-bot { color: #0088cc !important; font-weight: bold; text-decoration: none; margin-left: 0.8em; }
-    .telegram:hover, .telegram-bot:hover { text-decoration: underline; }
-    .call { color: #555 !important; font-weight: bold; text-decoration: none; margin-left: 0.8em; }
-    .call:hover { text-decoration: underline; }
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin:0;padding:1em;background:#f4f4f4}
+    #app{max-width:900px;margin:0 auto;background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+    h1,h2{color:#333} h1{margin-bottom:.4em}
+    label{display:block;margin-top:1rem;font-weight:bold;color:#555}
+    input[type="number"],select{width:100%;padding:.75rem;margin-top:.25rem;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+    button{width:100%;padding:.75rem;background:#42b883;color:#fff;border:none;border-radius:4px;margin-top:1.5rem;cursor:pointer;font-size:1rem}
+    button:hover{background:#36a371}
+    .form-container{background:#f9f9f9;padding:1.5rem;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:2rem}
+    .muted{color:#666;font-size:.9rem}
   </style>
+  <script src="https://unpkg.com/vue@3.4.31/dist/vue.global.prod.js" defer></script>
+  <script src="./calculation.js" defer></script>
+  <script src="./markdownExporter.js" defer></script>
+  <script src="./app.js" defer></script>
 </head>
 <body>
-  <div id="app">
-    <h1>Калькулятор баннеров</h1>
-    <div class="contacts-header">
-      Алексей,
-      <a href="tel:+79140022777" class="call">8-914-00-22-777</a>
-      <a href="https://wa.me/79140022777" class="whatsapp" target="_blank" rel="noopener">💬 WhatsApp</a>
-      <a href="https://t.me/+79140022777" class="telegram" target="_blank" rel="noopener">✈️ Telegram</a>
+<div id="app">
+  <h1>Калькулятор баннеров</h1>
+
+  <div class="form-container">
+    <h2>Добавить позицию</h2>
+
+    <label>Материал:
+      <select v-model="form.materialId">
+        <option v-for="m in prices.materials" :key="m.id" :value="m.id">{{ m.name }}</option>
+      </select>
+    </label>
+
+    <label>Ширина (м):
+      <input type="number" v-model.number="form.width" min="0.5" max="3" step="0.5" placeholder="Напр., 1.5">
+    </label>
+
+    <label>Высота (м):
+      <input type="number" v-model.number="form.height" min="0.5" max="30" step="0.5" placeholder="Напр., 2">
+    </label>
+
+    <label>Количество (шт):
+      <input type="number" v-model.number="form.quantity" min="1" step="1" placeholder="1">
+    </label>
+
+    <label>Люверсы:
+      <select v-model="form.grommetOption">
+        <option value="none">Без люверсов</option>
+        <option value="corners">4 по углам</option>
+        <option value="perimeter">По периметру</option>
+      </select>
+    </label>
+
+    <label>Макет:
+      <select v-model="form.layoutOption">
+        <option value="none">Свой макет</option>
+        <option value="create">Нужна разработка макета</option>
+      </select>
+    </label>
+
+    <button @click="addItem">Добавить в расчёт</button>
+    <button style="margin-top:.6rem" @click="showExport">Показать расчёт</button>
+    <button style="margin-top:.6rem" @click="exportTxt">Скачать расчёт (txt)</button>
+
+    <p class="muted" v-if="!prices.materials?.length">Загрузка прайса…</p>
+  </div>
+
+  <div v-if="calculatedItems.length === 0">
+    <p class="muted">Список пуст. Добавьте позиции.</p>
+  </div>
+  <div v-else>
+    <h2>Позиции</h2>
+    <div v-for="(item, index) in calculatedItems" :key="item.id" style="border:1px solid #ddd;border-radius:8px;padding:1rem;margin-bottom:1rem">
+      <p><strong>#{{ index + 1 }}</strong></p>
+      <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
+      <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
+      <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
+      <p><strong>Стоимость позиции: {{ formatCurrency(item.result.total) }}</strong></p>
+      <button @click="removeItem(item.id)" style="background:#e74c3c">Удалить</button>
     </div>
-
-    <div v-if="loading || !prices" class="loading-message">Загрузка данных...</div>
-    <div v-else>
-      <div class="form-container">
-        <h2>Добавить новый баннер</h2>
-        <div class="maket-info">
-          Готовый к типографской печати <b>макет текстового баннера всего за 299&nbsp;рублей!</b><br>
-          Открывайте Telegram-бота <a href="https://t.me/BannerPrintBot" class="telegram-bot" target="_blank" rel="noopener">@BannerPrintBot</a> и следуйте инструкции!
-        </div>
-
-        <label for="material">Материал:</label>
-        <template v-if="prices && prices.materials && prices.materials.length">
-          <select id="material" v-model="form.materialId">
-            <option v-for="mat in prices.materials" :key="mat.id" :value="mat.id">{{ mat.name }}</option>
-          </select>
-        </template>
-        <span v-else>Загрузка материалов...</span>
-
-        <label for="width">Ширина (м):</label>
-        <input type="number" id="width" v-model.number="form.width" min="0.5" max="3" step="0.5">
-
-        <label for="height">Высота (м):</label>
-        <input type="number" id="height" v-model.number="form.height" min="0.5" max="30" step="0.5">
-
-        <label for="quantity">Количество (шт):</label>
-        <input type="number" id="quantity" v-model.number="form.quantity" min="1" step="1">
-
-        <label for="grommets">Люверсы:</label>
-        <select id="grommets" v-model="form.grommetOption">
-          <option value="none">Без люверсов</option>
-          <option value="corners">4 по углам</option>
-          <option value="perimeter">По периметру</option>
-        </select>
-        <!-- <label><input type="checkbox" v-model="form.needsCutting"> Резка по периметру</label> -->
-        <label for="layout">Макет:</label>
-        <select id="layout" v-model="form.layoutOption">
-          <option value="none">Свой макет</option>
-          <option value="create">Нужна разработка макета</option>
-        </select>
-
-        <button @click="addItem" class="add-button">Добавить баннер в расчёт</button>
-        <button @click="showExport" :disabled="calculatedItems.length === 0" style="background:#27ae60;margin-top:0.7em;">Показать расчёт для копирования</button>
-        <button @click="exportTxt" :disabled="calculatedItems.length === 0" style="margin-top:0.5rem;">Скачать расчёт (txt)</button>
-        <div style="font-size:0.97em;color:#456;margin:1.1em 0 0.2em;">
-          Если при открытии файла на телефоне вместо текста видите непонятные знаки — просто воспользуйтесь кнопкой <b>"Показать расчёт для копирования"</b> и вставьте его в мессенджер или заметки на вашем смартфоне.
-        </div>
-      </div>
-
-      <div class="order-list" v-if="calculatedItems.length > 0">
-        <h2>Список баннеров в заказе</h2>
-        <div v-for="(item, index) in calculatedItems" :key="item.id" class="order-list-item">
-          <h3>Баннер #{{ index + 1 }}</h3>
-          <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
-          <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
-          <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
-          <hr>
-          <p><strong>Стоимость этой позиции: {{ formatCurrency(item.result.total) }}</strong></p>
-          <button @click="removeItem(item.id)" class="remove-btn">X</button>
-        </div>
-      </div>
-      
-      <div class="grand-total" v-if="calculatedItems.length > 0">
-        <h3>Общая стоимость заказа: <span>{{ formatCurrency(grandTotal) }}</span></h3>
-      </div>
-    </div>
-
-    <!-- Модальное окно для копирования расчёта -->
-    <div v-if="showTextExport" class="modal-backdrop">
-      <div class="modal-window">
-        <h2>Готовый расчёт для копирования</h2>
-        <textarea readonly style="width:100%;height:250px;font-size:1.07rem;resize:vertical;" ref="resultTextarea">{{ markdownText }}</textarea>
-        <button @click="copyResultMarkdown" style="margin-top:1em;">Скопировать</button>
-        <div style="font-size:0.97em;margin:0.8em 0;color:#555;">Если копирование не сработало — выделите текст вручную</div>
-        <button @click="showTextExport=false" style="margin-top:0.5em;background:#ccc;">Закрыть</button>
-      </div>
+    <div style="margin-top:1rem;text-align:right;border-top:2px solid #333;padding-top:1rem">
+      <p><strong>Итого:</strong> <span style="color:#42b883;font-size:1.6rem">{{ formatCurrency(grandTotal) }}</span></p>
     </div>
   </div>
 
-  <script src="./vendor/vue.global.js"></script>
-  <script src="./calculation.js"></script>
-  <script src="./markdownExporter.js"></script>
-  <script src="./app.js"></script>
+  <div v-if="showTextExport" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(50,55,60,.45);z-index:10000" @click.self="showTextExport=false">
+    <div style="background:#fff;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222">
+      <h2>Готовый расчёт</h2>
+      <textarea readonly style="width:100%;height:250px;font-size:1.07rem;resize:vertical">{{ markdownText }}</textarea>
+      <button @click="copyResultMarkdown">Скопировать</button>
+      <button @click="showTextExport=false">Закрыть</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
