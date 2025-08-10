@@ -1,5 +1,4 @@
-// Экспортер текстового расчёта для отправки клиенту/в переписку.
-// Для админки мы можем использовать тот же формат.
+// Экспорт расчёта в текст.
 function generateMarkdown(calculatedItems, grandTotal, formatCurrency) {
   const lines = [];
   lines.push('Расчёт заказа:');
