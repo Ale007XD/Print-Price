@@ -26,9 +26,9 @@
     .modal-window{background:#fff;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222}
   </style>
   <script src="https://unpkg.com/vue@3.4.31/dist/vue.global.prod.js" defer></script>
-  <script src="./calculation.admin.js" defer></script>
   <script src="./markdownExporter.js" defer></script>
   <script src="./crypto.js" defer></script>
+  <script src="./calculation.admin.js" defer></script>
   <script src="./admin.js" defer></script>
 </head>
 <body>
@@ -36,7 +36,7 @@
   <div v-if="!authorized">
     <div class="login-card">
       <h2>Вход в админку</h2>
-      <p class="muted">Данные прайса надёжно зашифрованы. Без правильных логина и пароля прайс недоступен.</p>
+      <p class="muted">Прайс зашифрован. Доступ только после ввода логина и пароля.</p>
       <label for="login">Логин</label>
       <input id="login" type="text" v-model="loginInput" autocomplete="username" autocapitalize="off" autofocus>
       <label for="password">Пароль</label>
@@ -75,12 +75,6 @@
         <select v-model="form.needsCutting">
           <option :value="true">Да</option>
           <option :value="false">Нет</option>
-        </select>
-      </label>
-      <label>Макет:
-        <select v-model="form.layoutOption">
-          <option value="none">Свой макет</option>
-          <option value="create">Нужна разработка макета</option>
         </select>
       </label>
 
