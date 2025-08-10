@@ -1,6 +1,4 @@
-// Админ-логика без «макета». Использует тот же процесс аутентификации и расшифровки прайса.
-// Отличия от публичной части: в форме нет поля layout, и расчёт не учитывает стоимость макета.
-
+// Админ-страница: логин/пароль -> PBKDF2 ключ -> расшифровка прайса (.enc) -> расчёт без "макета".
 const { createApp, ref, reactive, computed } = Vue;
 
 createApp({
@@ -13,7 +11,6 @@ createApp({
     const prices = ref(null);
     const orderItems = ref([]);
 
-    // Убрали layoutOption
     const form = reactive({
       materialId: '',
       width: 1,
@@ -34,7 +31,7 @@ createApp({
       }
       authLoading.value = true;
       try {
-        // Загружаем соль и лок для проверки пары логин/пароль
+        // Пути рассчитаны на то, что файлы лежат рядом с admin.html
         const [saltBuf, lockBuf] = await Promise.all([
           fetch('./admin-lock.salt', { cache: 'no-store' }).then(r => {
             if (!r.ok) throw new Error('salt fetch failed'); return r.arrayBuffer();
@@ -47,12 +44,10 @@ createApp({
 
         const key = await deriveKeyFromCredentials(loginInput.value, passwordInput.value, salt);
 
-        // Проверка
         const okPlain = await decryptAesGcm(lockBuf, key);
         const okJson = JSON.parse(new TextDecoder().decode(okPlain));
         if (!okJson?.ok) throw new Error('bad lock');
 
-        // Расшифровка прайса
         const encPrices = await fetch('./admin-prices.json.enc', { cache: 'no-store' }).then(r => {
           if (!r.ok) throw new Error('prices enc fetch failed'); return r.arrayBuffer();
         });
@@ -86,7 +81,6 @@ createApp({
     const calculatedItems = computed(() => {
       if (!prices.value || orderItems.value.length === 0) return [];
       return orderItems.value.map(item => {
-        // В админке используем функцию расчёта без макета (см. пункт 3)
         const result = calculateTotalCostAdmin(item, prices.value);
         const options = [];
         if (item.grommetOption === 'corners') {
@@ -181,7 +175,6 @@ createApp({
   }
 }).mount('#app');
 
-// SW общий, как и ранее
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
