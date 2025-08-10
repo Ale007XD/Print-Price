@@ -1,6 +1,5 @@
-// Логика админ-страницы: проверка логина/пароля без бэкенда, расшифровка прайса,
-// тот же калькулятор и экспорт, что и на публичной странице, но с приватными ценами.
-// Данные цен никогда не кэшируются и не пишутся в постоянное хранилище.
+// Админ-логика без «макета». Использует тот же процесс аутентификации и расшифровки прайса.
+// Отличия от публичной части: в форме нет поля layout, и расчёт не учитывает стоимость макета.
 
 const { createApp, ref, reactive, computed } = Vue;
 
@@ -14,14 +13,14 @@ createApp({
     const prices = ref(null);
     const orderItems = ref([]);
 
+    // Убрали layoutOption
     const form = reactive({
       materialId: '',
       width: 1,
       height: 2,
       quantity: 1,
       grommetOption: 'none',
-      needsCutting: true,
-      layoutOption: 'none',
+      needsCutting: true
     });
 
     const showTextExport = ref(false);
@@ -35,7 +34,7 @@ createApp({
       }
       authLoading.value = true;
       try {
-        // Загружаем соль и "замок" (lock) — маленький шифротекст для проверки пары логин/пароль
+        // Загружаем соль и лок для проверки пары логин/пароль
         const [saltBuf, lockBuf] = await Promise.all([
           fetch('./admin-lock.salt', { cache: 'no-store' }).then(r => {
             if (!r.ok) throw new Error('salt fetch failed'); return r.arrayBuffer();
@@ -46,26 +45,24 @@ createApp({
         ]);
         const salt = new Uint8Array(saltBuf);
 
-        // Выводим ключ из логин:пароль + соль
         const key = await deriveKeyFromCredentials(loginInput.value, passwordInput.value, salt);
 
-        // Проверяем корректность пары: расшифровка lock должна дать {"ok":true}
+        // Проверка
         const okPlain = await decryptAesGcm(lockBuf, key);
         const okJson = JSON.parse(new TextDecoder().decode(okPlain));
         if (!okJson?.ok) throw new Error('bad lock');
 
-        // Загружаем зашифрованный прайс и расшифровываем тем же ключом
+        // Расшифровка прайса
         const encPrices = await fetch('./admin-prices.json.enc', { cache: 'no-store' }).then(r => {
           if (!r.ok) throw new Error('prices enc fetch failed'); return r.arrayBuffer();
         });
         const pricesPlain = await decryptAesGcm(encPrices, key);
         prices.value = JSON.parse(new TextDecoder().decode(pricesPlain));
-        if (!prices.value?.materials?.length) throw new Error('empty materials');
 
+        if (!prices.value?.materials?.length) throw new Error('empty materials');
         form.materialId = prices.value.materials[0].id;
         authorized.value = true;
 
-        // Очищаем поле пароля из оперативной памяти UI
         passwordInput.value = '';
       } catch (e) {
         console.error(e);
@@ -77,7 +74,6 @@ createApp({
     }
 
     function logout() {
-      // Сбрасываем все чувствительные данные
       authorized.value = false;
       prices.value = null;
       orderItems.value = [];
@@ -90,17 +86,18 @@ createApp({
     const calculatedItems = computed(() => {
       if (!prices.value || orderItems.value.length === 0) return [];
       return orderItems.value.map(item => {
-        const result = calculateTotalCost(item, prices.value);
+        // В админке используем функцию расчёта без макета (см. пункт 3)
+        const result = calculateTotalCostAdmin(item, prices.value);
         const options = [];
         if (item.grommetOption === 'corners') {
-          options.push(`Люверсы - ${prices.value.grommets.corners.name}`);
+          options.push(`Люверсы - ${prices.value.grommets.corners?.name || '4 по углам'}`);
         } else if (item.grommetOption === 'perimeter') {
-          options.push(`Люверсы - ${prices.value.grommets.perimeter.name || 'По периметру'}`);
+          options.push(`Люверсы - ${prices.value.grommets.perimeter?.name || 'По периметру'}`);
         } else {
           options.push('Люверсы - Без');
         }
         options.push(`Резка - ${item.needsCutting ? 'Да' : 'Нет'}`);
-        options.push(`Макет - ${item.layoutOption === 'create' ? 'Разработка' : 'Свой'}`);
+
         const details = {
           ...item,
           materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
@@ -184,7 +181,7 @@ createApp({
   }
 }).mount('#app');
 
-// Регистрация сервис-воркера (общий sw.js), который не кэширует приватные артефакты
+// SW общий, как и ранее
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
