@@ -1,4 +1,4 @@
-// Админ-страница: логин/пароль -> PBKDF2 ключ -> расшифровка прайса (.enc) -> расчёт без "макета".
+// Админ-страница: без "макета" и без "реза". Поля ширины/высоты без предустановленных значений.
 const { createApp, ref, reactive, computed } = Vue;
 
 createApp({
@@ -13,11 +13,10 @@ createApp({
 
     const form = reactive({
       materialId: '',
-      width: 1,
-      height: 2,
-      quantity: 1,
-      grommetOption: 'none',
-      needsCutting: true
+      width: null,
+      height: null,
+      quantity: null,
+      grommetOption: 'none'
     });
 
     const showTextExport = ref(false);
@@ -31,7 +30,6 @@ createApp({
       }
       authLoading.value = true;
       try {
-        // Пути рассчитаны на то, что файлы лежат рядом с admin.html
         const [saltBuf, lockBuf] = await Promise.all([
           fetch('./admin-lock.salt', { cache: 'no-store' }).then(r => {
             if (!r.ok) throw new Error('salt fetch failed'); return r.arrayBuffer();
@@ -76,6 +74,12 @@ createApp({
       passwordInput.value = '';
       showTextExport.value = false;
       markdownText.value = '';
+      // сбрасываем форму
+      form.materialId = '';
+      form.width = null;
+      form.height = null;
+      form.quantity = null;
+      form.grommetOption = 'none';
     }
 
     const calculatedItems = computed(() => {
@@ -90,7 +94,6 @@ createApp({
         } else {
           options.push('Люверсы - Без');
         }
-        options.push(`Резка - ${item.needsCutting ? 'Да' : 'Нет'}`);
 
         const details = {
           ...item,
@@ -106,11 +109,31 @@ createApp({
     );
 
     function addItem() {
-      if (form.width <= 0 || form.height <= 0 || form.quantity <= 0) {
-        alert('Пожалуйста, введите корректные размеры и количество.');
+      const width = Number(form.width);
+      const height = Number(form.height);
+      const quantity = Number(form.quantity);
+      if (!form.materialId) {
+        alert('Выберите материал.');
         return;
       }
-      orderItems.value.push({ ...form, id: Date.now() + Math.random() });
+      if (!Number.isFinite(width) || width <= 0) {
+        alert('Введите корректную ширину (м).');
+        return;
+      }
+      if (!Number.isFinite(height) || height <= 0) {
+        alert('Введите корректную высоту (м).');
+        return;
+      }
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        alert('Введите корректное количество (шт).');
+        return;
+      }
+      orderItems.value.push({
+        materialId: form.materialId,
+        width, height, quantity,
+        grommetOption: form.grommetOption,
+        id: Date.now() + Math.random()
+      });
     }
 
     function removeItem(id) {
