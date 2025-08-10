@@ -1,4 +1,4 @@
-// Общая бизнес-логика расчёта (публичная версия с учётом макета).
+// Публичная версия: "макет" остаётся, "рез" убран из расчёта.
 function round2(x) {
   return Math.round((x + Number.EPSILON) * 100) / 100;
 }
@@ -29,8 +29,8 @@ function calcLayoutCost(area, layoutRules, layoutOption) {
   return 0;
 }
 
-// item: { materialId, width, height, quantity, grommetOption, needsCutting, layoutOption }
-// prices: { materials[], grommets{}, cutting{}, layout{} }
+// item: { materialId, width, height, quantity, grommetOption, layoutOption }
+// prices: { materials[], grommets{}, layout{} }
 function calculateTotalCost(item, prices) {
   const material = prices.materials.find(m => m.id === item.materialId);
   if (!material) throw new Error('Материал не найден в прайсе');
@@ -38,6 +38,10 @@ function calculateTotalCost(item, prices) {
   const width = Number(item.width);
   const height = Number(item.height);
   const qty = Number(item.quantity);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(qty) || width <= 0 || height <= 0 || qty <= 0) {
+    throw new Error('Некорректные размеры или количество');
+  }
+
   const areaSingle = round2(width * height);
   const areaTotal = round2(areaSingle * qty);
 
@@ -53,20 +57,13 @@ function calculateTotalCost(item, prices) {
     grommetsCost = perBannerCount * perPiece * qty;
   }
 
-  let cuttingCost = 0;
-  if (item.needsCutting) {
-    const perimeter = 2 * (width + height);
-    cuttingCost = Math.ceil(perimeter * (prices.cutting?.pricePerMeter || 0) * qty);
-  }
-
   const layoutCost = calcLayoutCost(areaSingle, prices.layout, item.layoutOption) * qty;
 
-  const total = basePrint + grommetsCost + cuttingCost + layoutCost;
+  const total = basePrint + grommetsCost + layoutCost;
 
   return {
     basePrint,
     grommetsCost,
-    cuttingCost,
     layoutCost,
     total,
     areaSingle,
