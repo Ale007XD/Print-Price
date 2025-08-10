@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Админ — калькулятор баннеров</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin:0;padding:1em;background:#f4f4f4}
+    #app{max-width:900px;margin:0 auto;background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+    h1,h2{color:#333} h1{margin-bottom:.4em}
+    label{display:block;margin-top:1rem;font-weight:bold;color:#555}
+    input[type="number"],select,input[type="text"],input[type="password"]{width:100%;padding:.75rem;margin-top:.25rem;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+    button{width:100%;padding:.75rem;background:#42b883;color:#fff;border:none;border-radius:4px;margin-top:1.5rem;cursor:pointer;font-size:1rem}
+    button:hover{background:#36a371}
+    button:disabled{background:#ccc!important;cursor:not-allowed}
+    .form-container{background:#f9f9f9;padding:1.5rem;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:2rem}
+    .order-list-item{border:1px solid #ddd;border-radius:8px;padding:1rem;margin-bottom:1rem;position:relative}
+    .order-list-item .remove-btn{position:absolute;top:10px;right:10px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-weight:bold}
+    .order-list-item .remove-btn:hover{background:#c0392b}
+    .grand-total{margin-top:2rem;text-align:right;border-top:2px solid #333;padding-top:1rem}
+    .grand-total span{color:#42b883;font-size:2.2rem;font-weight:bold}
+    .login-card{max-width:420px;margin:8vh auto;background:#fff;border:1px solid #eee;border-radius:10px;padding:1.2rem 1.2rem 1.6rem}
+    .muted{color:#666;font-size:.9rem}
+    .modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(50,55,60,.45);z-index:10000}
+    .modal-window{background:#fff;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222}
+  </style>
+  <script src="https://unpkg.com/vue@3.4.31/dist/vue.global.prod.js" defer></script>
+  <script src="./calculation.js" defer></script>
+  <script src="./markdownExporter.js" defer></script>
+  <script src="./crypto.js" defer></script>
+  <script src="./admin.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <div v-if="!authorized">
+    <div class="login-card">
+      <h2>Вход в админку</h2>
+      <p class="muted">Данные прайса надёжно зашифрованы. Без правильных логина и пароля прайс недоступен.</p>
+      <label for="login">Логин</label>
+      <input id="login" type="text" v-model="loginInput" autocomplete="username" autocapitalize="off" autofocus>
+      <label for="password">Пароль</label>
+      <input id="password" type="password" v-model="passwordInput" autocomplete="current-password">
+      <button :disabled="authLoading" @click="doAuth">{{ authLoading ? 'Проверяю…' : 'Войти' }}</button>
+      <p class="muted" v-if="authError" style="color:#b00020;margin-top:.8rem">{{ authError }}</p>
+    </div>
+  </div>
+
+  <div v-else>
+    <h1>Админ — калькулятор баннеров</h1>
+    <div class="form-container">
+      <h2>Добавить новый баннер</h2>
+      <label>Материал:
+        <select v-model="form.materialId">
+          <option v-for="m in prices.materials" :key="m.id" :value="m.id">{{ m.name }}</option>
+        </select>
+      </label>
+      <label>Ширина (м):
+        <input type="number" v-model.number="form.width" min="0.5" max="3" step="0.5">
+      </label>
+      <label>Высота (м):
+        <input type="number" v-model.number="form.height" min="0.5" max="30" step="0.5">
+      </label>
+      <label>Количество (шт):
+        <input type="number" v-model.number="form.quantity" min="1" step="1">
+      </label>
+      <label>Люверсы:
+        <select v-model="form.grommetOption">
+          <option value="none">Без люверсов</option>
+          <option value="corners">4 по углам</option>
+          <option value="perimeter">По периметру</option>
+        </select>
+      </label>
+      <label>Резка:
+        <select v-model="form.needsCutting">
+          <option :value="true">Да</option>
+          <option :value="false">Нет</option>
+        </select>
+      </label>
+      <label>Макет:
+        <select v-model="form.layoutOption">
+          <option value="none">Свой макет</option>
+          <option value="create">Нужна разработка макета</option>
+        </select>
+      </label>
+
+      <button @click="addItem">Добавить баннер в расчёт</button>
+      <button style="margin-top:.6rem" @click="showExport">Показать расчёт для копирования</button>
+      <button style="margin-top:.6rem" @click="exportTxt">Скачать расчёт (txt)</button>
+      <button style="margin-top:.6rem;background:#b00020" @click="logout">Выйти</button>
+    </div>
+
+    <div v-if="calculatedItems.length === 0">
+      <p class="muted">Список пуст. Добавьте позиции.</p>
+    </div>
+    <div v-else>
+      <h2>Список баннеров</h2>
+      <div v-for="(item, index) in calculatedItems" :key="item.id" class="order-list-item">
+        <p><strong>Баннер #{{ index + 1 }}</strong></p>
+        <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
+        <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
+        <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
+        <p><strong>Стоимость позиции: {{ formatCurrency(item.result.total) }}</strong></p>
+        <button class="remove-btn" @click="removeItem(item.id)">X</button>
+      </div>
+      <div class="grand-total">
+        <p><strong>Общая стоимость заказа:</strong> <span>{{ formatCurrency(grandTotal) }}</span></p>
+      </div>
+    </div>
+
+    <div v-if="showTextExport" class="modal-backdrop" @click.self="showTextExport=false">
+      <div class="modal-window">
+        <h2>Готовый расчёт для копирования</h2>
+        <textarea readonly style="width:100%;height:250px;font-size:1.07rem;resize:vertical" ref="resultTextarea">{{ markdownText }}</textarea>
+        <button @click="copyResultMarkdown">Скопировать</button>
+        <button @click="showTextExport=false">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
