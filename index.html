@@ -23,7 +23,14 @@
 </head>
 <body>
 <div id="app">
-  <h1>Калькулятор баннеров</h1>
+  <h1>Калькулятор печати баннеров</h1>
+
+  <div class="contacts-header">
+  Алексей,
+  <a href="tel:+79140022777" class="call">8-914-00-22-777</a>
+  <a href="https://wa.me/79140022777" class="whatsapp" target="_blank" rel="noopener">💬 WhatsApp</a>
+  <a href="https://t.me/+79140022777" class="telegram" target="_blank" rel="noopener">✈️ Telegram</a>
+  </div>
 
   <div class="form-container">
     <h2>Добавить позицию</h2>
@@ -60,6 +67,11 @@
         <option value="create">Нужна разработка макета</option>
       </select>
     </label>
+
+    <div class="maket-info">
+    Готовый к типографской печати <b>макет текстового баннера всего за 299&nbsp;рублей!</b><br>
+    Открывайте Telegram-бота <a href="https://t.me/BannerPrintBot" class="telegram-bot" target="_blank" rel="noopener">@BannerPrintBot</a> и следуйте инструкции!
+    </div>
 
     <button @click="addItem">Добавить в расчёт</button>
     <button style="margin-top:.6rem" @click="showExport">Показать расчёт</button>
