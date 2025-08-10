@@ -1,6 +1,5 @@
-// Криптоутилиты: PBKDF2-HMAC-SHA256 для вывода ключа из логин:пароль + соль
-// и дешифрование AES-256-GCM.
-// Формат шифротекста: [12 байт IV][ciphertext || authTag] (tag в конце блока CT).
+// Криптоутилиты: KDF PBKDF2(HMAC-SHA256, 200k) => AES-256-GCM key, и дешифрование AES-GCM.
+// Формат шифротекста: [12 байт IV][ciphertext || authTag].
 
 async function deriveKeyFromCredentials(login, password, salt) {
   const enc = new TextEncoder();
@@ -23,6 +22,6 @@ async function deriveKeyFromCredentials(login, password, salt) {
 async function decryptAesGcm(buffer, key) {
   const data = new Uint8Array(buffer);
   const iv = data.slice(0, 12);
-  const ct = data.slice(12); // включает тэг в конце
+  const ct = data.slice(12);
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
 }
