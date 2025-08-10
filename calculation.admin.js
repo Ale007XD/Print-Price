@@ -1,4 +1,4 @@
-// Расчёт для админки БЕЗ блока "Макет".
+// Расчёт для админки без "макета" и без "реза".
 function round2(x) {
   return Math.round((x + Number.EPSILON) * 100) / 100;
 }
@@ -9,8 +9,8 @@ function calcGrommetsPerimeter(width, height, stepMeters) {
   return Math.max(4, Math.ceil(perimeter / stepMeters));
 }
 
-// item: { materialId, width, height, quantity, grommetOption, needsCutting }
-// prices: { materials[], grommets:{corners:{price}, perimeter:{pricePerPiece, step}}, cutting:{pricePerMeter} }
+// item: { materialId, width, height, quantity, grommetOption }
+// prices: { materials[], grommets:{corners:{price}, perimeter:{pricePerPiece, step}} }
 function calculateTotalCostAdmin(item, prices) {
   const material = prices.materials.find(m => m.id === item.materialId);
   if (!material) throw new Error('Материал не найден в прайсе');
@@ -18,6 +18,10 @@ function calculateTotalCostAdmin(item, prices) {
   const width = Number(item.width);
   const height = Number(item.height);
   const qty = Number(item.quantity);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(qty) || width <= 0 || height <= 0 || qty <= 0) {
+    throw new Error('Некорректные размеры или количество');
+  }
+
   const areaSingle = round2(width * height);
   const areaTotal = round2(areaSingle * qty);
 
@@ -33,18 +37,11 @@ function calculateTotalCostAdmin(item, prices) {
     grommetsCost = perBannerCount * perPiece * qty;
   }
 
-  let cuttingCost = 0;
-  if (item.needsCutting) {
-    const perimeter = 2 * (width + height);
-    cuttingCost = Math.ceil(perimeter * (prices.cutting?.pricePerMeter || 0) * qty);
-  }
-
-  const total = basePrint + grommetsCost + cuttingCost;
+  const total = basePrint + grommetsCost;
 
   return {
     basePrint,
     grommetsCost,
-    cuttingCost,
     total,
     areaSingle,
     areaTotal
