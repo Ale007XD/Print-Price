@@ -1,11 +1,6 @@
-// Сервис-воркер с PWA-кешем для публичных ресурсов.
-// Критично: НЕ кэшируем приватные зашифрованные артефакты админки, чтобы их нельзя было извлечь оффлайн.
-// Список запретов: admin-lock.json.enc, admin-prices.json.enc, admin-lock.salt.
+// PWA сервис-воркер: кэшируем публичные ресурсы, НО не кэшируем приватные admin .enc/.salt.
+const CACHE_NAME = 'print-price-cache-v16';
 
-const CACHE_NAME = 'print-price-cache-v15';
-
-// Ресурсы, которые можно кэшировать (публичные)
-// Не включаем admin-lock.json.enc, admin-prices.json.enc, admin-lock.salt!
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -17,7 +12,6 @@ const PRECACHE_URLS = [
   './icons/icon-512.png'
 ];
 
-// Маска приватных артефактов, которые нельзя кэшировать
 function isPrivateAdminAsset(url) {
   return url.endsWith('/admin-lock.json.enc')
       || url.endsWith('/admin-prices.json.enc')
@@ -40,17 +34,14 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
 
-  // Никогда не перехватываем и не кэшируем приватные admin .enc и .salt
   if (isPrivateAdminAsset(req.url)) {
-    return; // пропускаем сеть напрямую
+    return; // не перехватываем приватные файлы
   }
 
-  // Простой cache-first для публичных файлов
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
       return fetch(req).then(networkResp => {
-        // Кэшируем только GET и только не-приватные и не-admin.html
         if (req.method === 'GET'
             && networkResp.ok
             && !isPrivateAdminAsset(req.url)
@@ -59,10 +50,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(req, cloned));
         }
         return networkResp;
-      }).catch(() => {
-        // Fallback можно добавить при необходимости
-        return caches.match('./index.html');
-      });
+      }).catch(() => caches.match('./index.html'));
     })
   );
 });
