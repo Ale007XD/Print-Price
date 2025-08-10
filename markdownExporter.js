@@ -1,24 +1,18 @@
+// Экспортер текстового расчёта для отправки клиенту/в переписку.
+// Для админки мы можем использовать тот же формат.
 function generateMarkdown(calculatedItems, grandTotal, formatCurrency) {
-  let markdown = `# Расчёт стоимости заказа\n\n`;
-
-  calculatedItems.forEach((item, index) => {
-    markdown += `## Баннер #${index + 1}\n`;
-    markdown += `- Материал: ${item.details.materialName}\n`;
-    markdown += `- Размер: ${item.details.width} м x ${item.details.height} м (${item.details.quantity} шт.)\n`;
-    markdown += `- Опции: ${item.details.optionsString}\n\n`;
-    markdown += `Стоимость этой позиции: ${formatCurrency(item.result.total)}\n\n`;
-    if (index < calculatedItems.length - 1) {
-      markdown += `--------------------------\n\n`;
-    }
+  const lines = [];
+  lines.push('Расчёт заказа:');
+  lines.push('---------------------------');
+  calculatedItems.forEach((item, idx) => {
+    lines.push(`Позиция #${idx + 1}`);
+    lines.push(`Материал: ${item.details.materialName}`);
+    lines.push(`Размер: ${item.details.width} м x ${item.details.height} м (${item.details.quantity} шт.)`);
+    lines.push(`Опции: ${item.details.optionsString}`);
+    lines.push(`Стоимость позиции: ${formatCurrency(item.result.total)}`);
+    lines.push('');
   });
-
-  markdown += `ВСЕГО К ОПЛАТЕ: ${formatCurrency(grandTotal)}\n\n`;
-  markdown += `---\n`;
-  markdown += `Алексей, 8-914-00-22-777 (WA, TG)\n`;
-  markdown += `WhatsApp: https://wa.me/79140022777\n`;
-  markdown += `Telegram: https://t.me/+79140022777\n\n`;
-  markdown += `Сайт: http://bannerbot.ru\n`;
-  markdown += `Бот для заказа макета: [@BannerPrintBot](https://t.me/BannerPrintBot)\n`;
-
-  return markdown;
+  lines.push('---------------------------');
+  lines.push(`Итоговая стоимость: ${formatCurrency(grandTotal)}`);
+  return lines.join('\n');
 }
