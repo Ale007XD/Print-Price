@@ -1,10 +1,3 @@
-name: Debug list
-run: |
-pwd
-ls -la
-echo "--- admin files ---"
-ls -la admin.html admin.js crypto.js sw.js admin-lock.salt admin-lock.json.enc admin-prices.json.enc || true
-
 name: Build Admin Secure
 
 on:
@@ -21,20 +14,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # 1) Восстанавливаем приватный прайс из секрета (никогда не попадает в репозиторий/историю)
+      - name: Check secrets presence (no values printed)
+        run: |
+          if [ -z "${{ secrets.ADMIN_PRICES_JSON }}" ]; then echo "ADMIN_PRICES_JSON is EMPTY"; exit 1; else echo "ADMIN_PRICES_JSON is SET"; fi
+          if [ -z "${{ secrets.ADMIN_LOGIN }}" ]; then echo "ADMIN_LOGIN is EMPTY"; exit 1; else echo "ADMIN_LOGIN is SET"; fi
+          if [ -z "${{ secrets.ADMIN_PASSWORD }}" ]; then echo "ADMIN_PASSWORD is EMPTY"; exit 1; else echo "ADMIN_PASSWORD is SET"; fi
+
+      # 1) Восстанавливаем приватный прайс из секрета (не попадает в git)
       - name: Restore admin prices from secret
         env:
           ADMIN_PRICES_JSON: ${{ secrets.ADMIN_PRICES_JSON }}
         run: |
-          if [ -z "$ADMIN_PRICES_JSON" ]; then
-            echo "Missing ADMIN_PRICES_JSON secret" >&2
-            exit 1
-          fi
+          set -e
           printf "%s" "$ADMIN_PRICES_JSON" > admin-prices.src.json
 
-      # 2) Готовим соль и шифруем lock + prices с ключом PBKDF2(login:password,salt,200k,32)
+      # 2) Готовим соль и шифруем lock + prices (PBKDF2-HMAC-SHA256, 200k итераций, AES-256-GCM)
       - name: Prepare locks
         env:
           ADMIN_LOGIN: ${{ secrets.ADMIN_LOGIN }}
@@ -60,7 +57,7 @@ jobs:
             fs.writeFileSync(outFile, Buffer.concat([iv, Buffer.concat([ct, tag])]));
           }
 
-          // Мини-замок для валидации пары логин/пароль
+          // Мини-замок для проверки пары логин/пароль
           seal({ok:true,v:1}, "admin-lock.json.enc");
 
           // Приватный прайс
@@ -68,12 +65,21 @@ jobs:
           seal(prices, "admin-prices.json.enc");
           '
 
-      # 3) Удаляем открытый исходник прайса до публикации
+      # 3) Диагностика: проверим, что нужные файлы реально существуют
+      - name: Debug list
+        run: |
+          pwd
+          ls -la
+          echo "--- admin files ---"
+          ls -la admin.html admin.js crypto.js sw.js || true
+          ls -la admin-lock.salt admin-lock.json.enc admin-prices.json.enc
+
+      # 4) Удаляем открытый исходник прайса до публикации
       - name: Remove plaintext prices before publish
         run: |
           rm -f admin-prices.src.json
 
-      # 4) Публикация артефакта Pages
+      # 5) Публикация артефакта Pages из корня
       - name: Upload artifact to Pages
         uses: actions/upload-pages-artifact@v3
         with:
