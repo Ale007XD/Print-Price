@@ -2,110 +2,247 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Калькулятор баннеров — публичная версия</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="manifest" href="manifest.json">
+  <title>Калькулятор печати баннеров</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin:0;padding:1em;background:#f4f4f4}
-    #app{max-width:900px;margin:0 auto;background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
-    h1,h2{color:#333} h1{margin-bottom:.4em}
-    label{display:block;margin-top:1rem;font-weight:bold;color:#555}
-    input[type="number"],select{width:100%;padding:.75rem;margin-top:.25rem;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
-    button{width:100%;padding:.75rem;background:#42b883;color:#fff;border:none;border-radius:4px;margin-top:1.5rem;cursor:pointer;font-size:1rem}
-    button:hover{background:#36a371}
-    .form-container{background:#f9f9f9;padding:1.5rem;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:2rem}
-    .muted{color:#666;font-size:.9rem}
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280;
+      --brand:#42b883; --line:#e5e7eb; --shadow:0 4px 12px rgba(0,0,0,.08);
+      --chip:#f8fafc; --chip-border:#e5e7eb;
+    }
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+    .wrap{max-width:980px;margin:18px auto;padding:0 14px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);}
+    header{padding:18px 18px 12px;border-bottom:1px solid var(--line)}
+    h1{margin:0 0 10px;font-size:28px;line-height:1.2;font-weight:800}
+    .contacts{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;color:var(--muted);font-size:15px}
+    .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.28rem .6rem;border:1px solid var(--chip-border);border-radius:999px;background:var(--chip);text-decoration:none;color:#0f172a;transition:transform .15s}
+    .chip:active{transform:translateY(1px)}
+    .chip .icon{font-size:1rem;line-height:1}
+    .body{padding:18px}
+    label{display:block;margin:.8rem 0 .35rem;font-weight:600}
+    input,select,button,textarea{font:inherit}
+    input[type=number],select{width:100%;padding:.7rem .8rem;border:1px solid var(--line);border-radius:10px;background:#fff;box-sizing:border-box}
+    .row{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .col-6{grid-column:span 6}
+    .col-4{grid-column:span 4}
+    .col-12{grid-column:span 12}
+    @media(max-width:720px){.col-6,.col-4{grid-column:span 12}}
+    .btn{display:inline-block;width:100%;padding:.9rem 1rem;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;cursor:pointer}
+    .btn.alt{background:#111827}
+    .muted{color:var(--muted)}
+    .list-item{border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;margin:10px 0;background:#fff;position:relative}
+    .remove{position:absolute;top:10px;right:10px;border:0;background:#e11d48;color:#fff;border-radius:8px;padding:.35rem .55rem;cursor:pointer}
+    .total{margin-top:10px;padding-top:10px;border-top:2px solid #111827;text-align:right;font-size:20px}
+    .total span{color:var(--brand);font-weight:800}
+    .modal{position:fixed;inset:0;background:rgba(16,18,27,.45);display:flex;align-items:flex-start;justify-content:center;padding:22px;z-index:1000}
+    .modal .box{background:#fff;border-radius:12px;max-width:680px;width:100%;box-shadow:var(--shadow);padding:16px}
+    textarea{width:100%;min-height:260px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:.8rem}
   </style>
   <script src="https://unpkg.com/vue@3.4.31/dist/vue.global.prod.js" defer></script>
   <script src="./calculation.js" defer></script>
   <script src="./markdownExporter.js" defer></script>
-  <script src="./app.js" defer></script>
+  <script>
+  // Публичная логика без внешних файлов app.js
+  const { createApp, ref, reactive, computed } = Vue;
+  window.addEventListener('DOMContentLoaded', () => {
+    createApp({
+      setup() {
+        const prices = ref({ materials: [], grommets:{}, layout:{} });
+        const orderItems = ref([]);
+
+        // Форма без предзаполнений, с placeholders в HTML
+        const form = reactive({
+          materialId: '',
+          width: null,
+          height: null,
+          quantity: null,
+          grommetOption: 'none',
+          layoutOption: 'none'
+        });
+
+        // Загрузка публичного прайса
+        (async () => {
+          try {
+            const r = await fetch('./prices.json', { cache: 'no-store' });
+            if (r.ok) {
+              prices.value = await r.json();
+              if (prices.value?.materials?.length) form.materialId = prices.value.materials[0].id;
+            }
+          } catch(e) { console.error('Не удалось загрузить прайс', e); }
+        })();
+
+        const calculatedItems = computed(() => {
+          if (!prices.value || orderItems.value.length === 0) return [];
+          return orderItems.value.map(item => {
+            const result = calculateTotalCost(item, prices.value); // публичный расчёт: печать + люверсы + макет, без "реза"
+            const opts = [];
+            if (item.grommetOption === 'corners') {
+              opts.push(`Люверсы - ${prices.value.grommets.corners?.name || '4 по углам'}`);
+            } else if (item.grommetOption === 'perimeter') {
+              opts.push(`Люверсы - ${prices.value.grommets.perimeter?.name || 'По периметру'}`);
+            } else {
+              opts.push('Люверсы - Без');
+            }
+            opts.push(`Макет - ${item.layoutOption === 'create' ? 'Разработка' : 'Свой'}`);
+            const details = {
+              ...item,
+              materialName: prices.value.materials.find(m => m.id === item.materialId)?.name || 'Неизвестно',
+              optionsString: opts.join(', ')
+            };
+            return { id: item.id, details, result };
+          });
+        });
+
+        const grandTotal = computed(() =>
+          calculatedItems.value.reduce((t, it) => t + it.result.total, 0)
+        );
+
+        function addItem() {
+          const width = Number(form.width);
+          const height = Number(form.height);
+          const quantity = Number(form.quantity);
+          if (!form.materialId) return alert('Выберите материал.');
+          if (!Number.isFinite(width) || width <= 0) return alert('Введите корректную ширину (м).');
+          if (!Number.isFinite(height) || height <= 0) return alert('Введите корректную высоту (м).');
+          if (!Number.isFinite(quantity) || quantity <= 0) return alert('Введите корректное количество (шт).');
+          orderItems.value.push({
+            materialId: form.materialId, width, height, quantity,
+            grommetOption: form.grommetOption, layoutOption: form.layoutOption,
+            id: Date.now() + Math.random()
+          });
+        }
+        function removeItem(id){ orderItems.value = orderItems.value.filter(i => i.id !== id); }
+        function formatCurrency(n){ return new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB',maximumFractionDigits:0}).format(n||0); }
+
+        const showTextExport = ref(false);
+        const markdownText = ref('');
+        function openExport(){ markdownText.value = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency); showTextExport.value = true; }
+        function exportTxt(){
+          if (grandTotal.value <= 0) return;
+          const BOM = '\uFEFF';
+          const now = new Date(); const y=now.getFullYear(); const m=String(now.getMonth()+1).padStart(2,'0');
+          const txt = generateMarkdown(calculatedItems.value, grandTotal.value, formatCurrency);
+          const file = `raschet_zakaza_${y}-${m}_${Math.round(grandTotal.value)}rub.txt`;
+          const blob = new Blob([BOM + txt], {type:'text/plain;charset=utf-8;'});
+          const url = URL.createObjectURL(blob); const a=document.createElement('a');
+          a.href=url; a.download=file; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        }
+        function copyExport(){
+          const text = markdownText.value || '';
+          if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>alert('Скопировано!')).catch(fallback);
+          else fallback();
+          function fallback(){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Скопировано!'); }
+        }
+
+        return { prices, form, orderItems, calculatedItems, grandTotal,
+                 addItem, removeItem, formatCurrency,
+                 showTextExport, openExport, exportTxt, markdownText, copyExport };
+      }
+    }).mount('#app');
+  });
+  </script>
 </head>
 <body>
-<div id="app">
-  <h1>Калькулятор печати баннеров</h1>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <h1>Калькулятор печати баннеров</h1>
+        <div class="contacts">
+          <span>Алексей</span>
+          <a href="tel:+79140022777" class="chip" aria-label="Позвонить">
+            <span class="icon">📞</span><span>8‑914‑00‑22‑777</span>
+          </a>
+          <a href="https://wa.me/79140022777" class="chip" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <span class="icon">💬</span><span>WhatsApp</span>
+          </a>
+          <a href="https://t.me/+79140022777" class="chip" target="_blank" rel="noopener" aria-label="Telegram">
+            <span class="icon">✈️</span><span>Telegram</span>
+          </a>
+        </div>
+      </header>
 
-  <div class="contacts-header">
-  Алексей,
-  <a href="tel:+79140022777" class="call">8-914-00-22-777</a>
-  <a href="https://wa.me/79140022777" class="whatsapp" target="_blank" rel="noopener">💬 WhatsApp</a>
-  <a href="https://t.me/+79140022777" class="telegram" target="_blank" rel="noopener">✈️ Telegram</a>
-  </div>
+      <div class="body" id="app">
+        <div class="card" style="padding:14px;margin-bottom:14px;">
+          <div class="row">
+            <div class="col-12">
+              <label>Материал</label>
+              <select v-model="form.materialId">
+                <option v-for="m in prices.materials" :key="m.id" :value="m.id">{{ m.name }}</option>
+              </select>
+            </div>
 
-  <div class="form-container">
-    <h2>Добавить позицию</h2>
+            <div class="col-4">
+              <label>Ширина (м)</label>
+              <input type="number" v-model.number="form.width" min="0.5" max="3" step="0.5" placeholder="напр., 1.5">
+            </div>
+            <div class="col-4">
+              <label>Высота (м)</label>
+              <input type="number" v-model.number="form.height" min="0.5" max="30" step="0.5" placeholder="напр., 2">
+            </div>
+            <div class="col-4">
+              <label>Количество (шт)</label>
+              <input type="number" v-model.number="form.quantity" min="1" step="1" placeholder="1">
+            </div>
 
-    <label>Материал:
-      <select v-model="form.materialId">
-        <option v-for="m in prices.materials" :key="m.id" :value="m.id">{{ m.name }}</option>
-      </select>
-    </label>
+            <div class="col-6">
+              <label>Люверсы</label>
+              <select v-model="form.grommetOption">
+                <option value="none">Без люверсов</option>
+                <option value="corners">4 по углам</option>
+                <option value="perimeter">По периметру</option>
+              </select>
+            </div>
 
-    <label>Ширина (м):
-      <input type="number" v-model.number="form.width" min="0.5" max="3" step="0.5" placeholder="Напр., 1.5">
-    </label>
+            <div class="col-6">
+              <label>Макет</label>
+              <select v-model="form.layoutOption">
+                <option value="none">Свой макет</option>
+                <option value="create">Нужна разработка макета</option>
+              </select>
+            </div>
 
-    <label>Высота (м):
-      <input type="number" v-model.number="form.height" min="0.5" max="30" step="0.5" placeholder="Напр., 2">
-    </label>
+            <div class="col-12" style="margin-top:6px">
+              <button class="btn" @click="addItem">Добавить в расчёт</button>
+            </div>
+          </div>
+        </div>
 
-    <label>Количество (шт):
-      <input type="number" v-model.number="form.quantity" min="1" step="1" placeholder="1">
-    </label>
+        <div v-if="!prices.materials?.length" class="muted">Загрузка прайса…</div>
 
-    <label>Люверсы:
-      <select v-model="form.grommetOption">
-        <option value="none">Без люверсов</option>
-        <option value="corners">4 по углам</option>
-        <option value="perimeter">По периметру</option>
-      </select>
-    </label>
+        <div v-if="calculatedItems.length === 0" class="muted">Список пуст. Добавьте позиции.</div>
 
-    <div class="maket-info">
-    Готовый к типографской печати <b>макет текстового баннера всего за 299&nbsp;рублей!</b><br>
-    Открывайте Telegram-бота <a href="https://t.me/BannerPrintBot" class="telegram-bot" target="_blank" rel="noopener">@BannerPrintBot</a> и следуйте инструкции!
+        <div v-else>
+          <div class="list-item" v-for="(item, index) in calculatedItems" :key="item.id">
+            <div style="font-weight:700;margin-bottom:.25rem">#{{ index + 1 }}</div>
+            <div><strong>Материал:</strong> {{ item.details.materialName }}</div>
+            <div><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</div>
+            <div><strong>Опции:</strong> {{ item.details.optionsString }}</div>
+            <div style="margin-top:.25rem"><strong>Стоимость позиции: {{ formatCurrency(item.result.total) }}</strong></div>
+            <button class="remove" @click="removeItem(item.id)">Удалить</button>
+          </div>
+
+          <div class="total"><strong>Итого:</strong> <span>{{ formatCurrency(grandTotal) }}</span></div>
+
+          <div class="row" style="margin-top:10px">
+            <div class="col-6"><button class="btn alt" @click="openExport">Показать расчёт</button></div>
+            <div class="col-6"><button class="btn" @click="exportTxt">Скачать расчёт (txt)</button></div>
+          </div>
+        </div>
+
+        <div v-if="showTextExport" class="modal" @click.self="showTextExport=false">
+          <div class="box">
+            <h2 style="margin:0 0 8px">Готовый расчёт</h2>
+            <textarea readonly>{{ markdownText }}</textarea>
+            <div class="row" style="margin-top:10px">
+              <div class="col-6"><button class="btn alt" @click="showTextExport=false">Закрыть</button></div>
+              <div class="col-6"><button class="btn" @click="copyExport">Скопировать</button></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
-
-    <label>Макет:
-      <select v-model="form.layoutOption">
-        <option value="none">Свой макет</option>
-        <option value="create">Нужна разработка макета</option>
-      </select>
-    </label>
-
-    <button @click="addItem">Добавить в расчёт</button>
-    <button style="margin-top:.6rem" @click="showExport">Показать расчёт</button>
-    <button style="margin-top:.6rem" @click="exportTxt">Скачать расчёт (txt)</button>
-
-    <p class="muted" v-if="!prices.materials?.length">Загрузка прайса…</p>
   </div>
-
-  <div v-if="calculatedItems.length === 0">
-    <p class="muted">Список пуст. Добавьте позиции.</p>
-  </div>
-  <div v-else>
-    <h2>Позиции</h2>
-    <div v-for="(item, index) in calculatedItems" :key="item.id" style="border:1px solid #ddd;border-radius:8px;padding:1rem;margin-bottom:1rem">
-      <p><strong>#{{ index + 1 }}</strong></p>
-      <p><strong>Материал:</strong> {{ item.details.materialName }}</p>
-      <p><strong>Размер:</strong> {{ item.details.width }} м x {{ item.details.height }} м ({{ item.details.quantity }} шт.)</p>
-      <p><strong>Опции:</strong> {{ item.details.optionsString }}</p>
-      <p><strong>Стоимость позиции: {{ formatCurrency(item.result.total) }}</strong></p>
-      <button @click="removeItem(item.id)" style="background:#e74c3c">Удалить</button>
-    </div>
-    <div style="margin-top:1rem;text-align:right;border-top:2px solid #333;padding-top:1rem">
-      <p><strong>Итого:</strong> <span style="color:#42b883;font-size:1.6rem">{{ formatCurrency(grandTotal) }}</span></p>
-    </div>
-  </div>
-
-  <div v-if="showTextExport" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(50,55,60,.45);z-index:10000" @click.self="showTextExport=false">
-    <div style="background:#fff;border-radius:8px;padding:2rem 1rem;width:96%;max-width:600px;margin:3rem auto;box-shadow:0 6px 35px #2222">
-      <h2>Готовый расчёт</h2>
-      <textarea readonly style="width:100%;height:250px;font-size:1.07rem;resize:vertical">{{ markdownText }}</textarea>
-      <button @click="copyResultMarkdown">Скопировать</button>
-      <button @click="showTextExport=false">Закрыть</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
