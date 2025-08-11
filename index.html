@@ -130,13 +130,13 @@
           const file = `raschet_zakaza_${y}-${m}_${Math.round(grandTotal.value)}rub.txt`;
           const blob = new Blob([BOM + txt], {type:'text/plain;charset=utf-8;'});
           const url = URL.createObjectURL(blob); const a=document.createElement('a');
-          a.href=url; a.download=file; document..appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          a.href=url; a.download=file; document.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
         }
         function copyExport(){
           const text = markdownText.value || '';
           if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>alert('Скопировано!')).catch(fallback);
           else fallback();
-          function fallback(){ const ta=document.createElement('textarea'); ta.value=text; document..appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Скопировано!'); }
+          function fallback(){ const ta=document.createElement('textarea'); ta.value=text; document.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Скопировано!'); }
         }
 
         return { prices, form, orderItems, calculatedItems, grandTotal,
