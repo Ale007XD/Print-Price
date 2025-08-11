@@ -39,9 +39,13 @@
     .modal .box{background:#fff;border-radius:12px;max-width:680px;width:100%;box-shadow:var(--shadow);padding:16px}
     textarea{width:100%;min-height:260px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:.8rem}
   </style>
-  <script src="./vendor/vue.global.js" defer></script>
-  <script src="./calculation.js" defer></script>
-  <script src="./markdownExporter.js" defer></script>
+  
+  <script src="https://unpkg.com/vue@3.4.31/dist/vue.global.prod.js" defer></script> 
+  <script src="./calculation.js" defer></script> 
+  <script src="./markdownExporter.js" defer></script> 
+  <script src="./app.js" defer></script> 
+  </head> 
+  
   <script>
   // Публичная логика без внешних файлов app.js
   const { createApp, ref, reactive, computed } = Vue;
@@ -126,13 +130,13 @@
           const file = `raschet_zakaza_${y}-${m}_${Math.round(grandTotal.value)}rub.txt`;
           const blob = new Blob([BOM + txt], {type:'text/plain;charset=utf-8;'});
           const url = URL.createObjectURL(blob); const a=document.createElement('a');
-          a.href=url; a.download=file; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          a.href=url; a.download=file; document..appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
         }
         function copyExport(){
           const text = markdownText.value || '';
           if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>alert('Скопировано!')).catch(fallback);
           else fallback();
-          function fallback(){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Скопировано!'); }
+          function fallback(){ const ta=document.createElement('textarea'); ta.value=text; document..appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Скопировано!'); }
         }
 
         return { prices, form, orderItems, calculatedItems, grandTotal,
