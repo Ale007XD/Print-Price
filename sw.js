@@ -1,5 +1,5 @@
 // PWA сервис-воркер: кэшируем публичные ресурсы, НО не кэшируем приватные admin .enc/.salt.
-const CACHE_NAME = 'print-price-cache-v16';
+const CACHE_NAME = 'print-price-cache-v17';
 
 const PRECACHE_URLS = [
   './',
