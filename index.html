@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <title>Калькулятор печати баннеров</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script src="./vendor/vue.global.prod.js" defer></script> 
+  <script src="./calculation.js" defer></script> 
+  <script src="./markdownExporter.js" defer></script> 
+  <script src="./app.js" defer></script> 
+  
   <style>
     :root{
       --bg:#f6f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280;
@@ -39,14 +45,7 @@
     .modal .box{background:#fff;border-radius:12px;max-width:680px;width:100%;box-shadow:var(--shadow);padding:16px}
     textarea{width:100%;min-height:260px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:.8rem}
   </style>
-  
-  <script src="./vendor/vue.global.prod.js" defer></script> 
-  <script src="./calculation.js" defer></script> 
-  <script src="./markdownExporter.js" defer></script> 
-  <script src="./app.js" defer></script> 
-  </head> 
-  
- 
+
 </head>
 <body>
   <div class="wrap">
